@@ -7,7 +7,10 @@
 		{
 			"Name": "SFAF",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
 		}
 	],
 	"Plugins": [
@@ -70,6 +73,11 @@
 				"Mac",
 				"Linux"
 			]
+		},
+		{
+			"Name": "TDSHeros",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/df017478618a4e9bab4042c7485f7579"
 		}
 	],
 	"TargetPlatforms": [
