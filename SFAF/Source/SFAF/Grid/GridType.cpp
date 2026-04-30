@@ -2,19 +2,50 @@
 
 
 #include "Grid/GridType.h"
+#include "Grid/GridTacticalTypes.h"
 
 // Sets default values
 AGridType::AGridType()
 {
 	// Disable Tick for performance since it's not being used
 	PrimaryActorTick.bCanEverTick = false;
+
+	GridDataComponent = CreateDefaultSubobject<UGridDataComponent>(TEXT("GridDataComponent"));
+	
+	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+	SetRootComponent(SceneRoot);
+
+	GridMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("GridMesh"));
+	GridMesh->SetupAttachment(SceneRoot);
+
+	TacticalObstacleMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("TacticalObstacleMesh"));
+	TacticalObstacleMesh->SetupAttachment(SceneRoot);
+
+	TacticalDoubleCostMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("TacticalDoubleCostMesh"));
+	TacticalDoubleCostMesh->SetupAttachment(SceneRoot);
+
+	TacticalTripleCostMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("TacticalTripleCostMesh"));
+	TacticalTripleCostMesh->SetupAttachment(SceneRoot);
+
+	TacticalFlyingOnlyMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("TacticalFlyingOnlyMesh"));
+	TacticalFlyingOnlyMesh->SetupAttachment(SceneRoot);
+}
+
+void AGridType::InitializeCollision() const
+{
+	GridMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Block);
+	TacticalObstacleMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Ignore);
+	TacticalDoubleCostMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Ignore);
+	TacticalTripleCostMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Ignore);
+	TacticalFlyingOnlyMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Ignore);
 }
 
 // Called when the game starts or when spawned
 void AGridType::BeginPlay()
 {
 	Super::BeginPlay();
-	// No additional initialization needed
+	
+	InitializeCollision();
 }
 
 // Called every frame (disabled in constructor for performance)
@@ -24,43 +55,7 @@ void AGridType::Tick(float DeltaTime)
 	// No per-frame updates needed
 }
 
-void AGridType::SetInstancedMeshes(UInstancedStaticMeshComponent* Grid, UInstancedStaticMeshComponent* Obstacle,
-	UInstancedStaticMeshComponent* DoubleCost, UInstancedStaticMeshComponent* TripleCost,
-	UInstancedStaticMeshComponent* FlyingOnly)
-{
-	// Validate and assign mesh components with logging for null pointers
-	if (!Grid)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("SetInstancedMeshes: Grid mesh is null"));
-	}
-	GridMesh = Grid;
-
-	if (!Obstacle)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("SetInstancedMeshes: Obstacle mesh is null"));
-	}
-	TacticalObstacleMesh = Obstacle;
-
-	if (!DoubleCost)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("SetInstancedMeshes: DoubleCost mesh is null"));
-	}
-	TacticalDoubleCostMesh = DoubleCost;
-
-	if (!TripleCost)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("SetInstancedMeshes: TripleCost mesh is null"));
-	}
-	TacticalTripleCostMesh = TripleCost;
-
-	if (!FlyingOnly)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("SetInstancedMeshes: FlyingOnly mesh is null"));
-	}
-	TacticalFlyingOnlyMesh = FlyingOnly;
-}
-
-void AGridType::ClearInstancedMeshes()
+void AGridType::ClearInstancedMeshes() const
 {
 	// Check each mesh individually and clear if not null
 	if (GridMesh)
@@ -89,9 +84,9 @@ void AGridType::ClearInstancedMeshes()
 	}
 }
 
-void AGridType::AddInstanceMesh(int TileType, FTransform Transform)
+void AGridType::AddInstanceMesh(int TileType, FTransform Transform) const
 {
-	// Add instance based on tile type
+	// Add instance based on tile type or tactical channel
 	switch (TileType)
 	{
 	case 1:
@@ -115,15 +110,32 @@ void AGridType::AddInstanceMesh(int TileType, FTransform Transform)
 			TacticalFlyingOnlyMesh->AddInstance(Transform, true);
 		break;
 	default:
-		// For unknown tile types, add to the base grid as fallback
-		if (GridMesh)
-			GridMesh->AddInstance(Transform, true);
-		UE_LOG(LogTemp, Warning, TEXT("AddInstanceMesh: Unknown TileType %d"), TileType);
+		// Check if it's an EGridTacticalChannel value
+		switch (static_cast<EGridTacticalChannel>(TileType))
+		{
+		case EGridTacticalChannel::Obstacle:
+			if (TacticalObstacleMesh) TacticalObstacleMesh->AddInstance(Transform, true);
+			break;
+		case EGridTacticalChannel::DoubleCost:
+			if (TacticalDoubleCostMesh) TacticalDoubleCostMesh->AddInstance(Transform, true);
+			break;
+		case EGridTacticalChannel::TripleCost:
+			if (TacticalTripleCostMesh) TacticalTripleCostMesh->AddInstance(Transform, true);
+			break;
+		case EGridTacticalChannel::FlyingOnly:
+			if (TacticalFlyingOnlyMesh) TacticalFlyingOnlyMesh->AddInstance(Transform, true);
+			break;
+		default:
+			if (GridMesh)
+				GridMesh->AddInstance(Transform, true);
+			UE_LOG(LogTemp, Warning, TEXT("AddInstanceMesh: Unknown TileType %d"), TileType);
+			break;
+		}
 		break;
 	}
 }
 
-bool AGridType::RemoveInstanceMesh(int TileType, int Index)
+bool AGridType::RemoveInstanceMesh(int TileType, int Index) const
 {
 	// Validate index
 	if (Index < 0)
@@ -132,97 +144,61 @@ bool AGridType::RemoveInstanceMesh(int TileType, int Index)
 		return false;
 	}
 
+	// Helper lambda to remove instance if valid
+	auto RemoveIfValid = [Index](UInstancedStaticMeshComponent* Mesh, const FString& MeshName) -> bool
+	{
+		if (Mesh && Mesh->GetInstanceCount() > Index)
+		{
+			Mesh->RemoveInstance(Index);
+			return true;
+		}
+		else if (!Mesh)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: %s is null"), *MeshName);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: Index %d out of bounds for %s (count: %d)"),
+				Index, *MeshName, Mesh->GetInstanceCount());
+		}
+		return false;
+	};
+
 	// Remove instance based on tile type
 	switch (TileType)
 	{
 	case 1:
-		if (GridMesh && GridMesh->GetInstanceCount() > Index)
-		{
-			GridMesh->RemoveInstance(Index);
-			return true;
-		}
-		else if (!GridMesh)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: GridMesh is null"));
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: Index %d out of bounds for GridMesh (count: %d)"),
-				Index, GridMesh->GetInstanceCount());
-		}
-		break;
+		return RemoveIfValid(GridMesh, TEXT("GridMesh"));
 	case 2:
-		if (TacticalObstacleMesh && TacticalObstacleMesh->GetInstanceCount() > Index)
-		{
-			TacticalObstacleMesh->RemoveInstance(Index);
-			return true;
-		}
-		else if (!TacticalObstacleMesh)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: TacticalObstacleMesh is null"));
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: Index %d out of bounds for TacticalObstacleMesh (count: %d)"),
-				Index, TacticalObstacleMesh->GetInstanceCount());
-		}
-		break;
+		return RemoveIfValid(TacticalObstacleMesh, TEXT("TacticalObstacleMesh"));
 	case 3:
-		if (TacticalDoubleCostMesh && TacticalDoubleCostMesh->GetInstanceCount() > Index)
-		{
-			TacticalDoubleCostMesh->RemoveInstance(Index);
-			return true;
-		}
-		else if (!TacticalDoubleCostMesh)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: TacticalDoubleCostMesh is null"));
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: Index %d out of bounds for TacticalDoubleCostMesh (count: %d)"),
-				Index, TacticalDoubleCostMesh->GetInstanceCount());
-		}
-		break;
+		return RemoveIfValid(TacticalDoubleCostMesh, TEXT("TacticalDoubleCostMesh"));
 	case 4:
-		if (TacticalTripleCostMesh && TacticalTripleCostMesh->GetInstanceCount() > Index)
-		{
-			TacticalTripleCostMesh->RemoveInstance(Index);
-			return true;
-		}
-		else if (!TacticalTripleCostMesh)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: TacticalTripleCostMesh is null"));
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: Index %d out of bounds for TacticalTripleCostMesh (count: %d)"),
-				Index, TacticalTripleCostMesh->GetInstanceCount());
-		}
-		break;
+		return RemoveIfValid(TacticalTripleCostMesh, TEXT("TacticalTripleCostMesh"));
 	case 5:
-		if (TacticalFlyingOnlyMesh && TacticalFlyingOnlyMesh->GetInstanceCount() > Index)
-		{
-			TacticalFlyingOnlyMesh->RemoveInstance(Index);
-			return true;
-		}
-		else if (!TacticalFlyingOnlyMesh)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: TacticalFlyingOnlyMesh is null"));
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: Index %d out of bounds for TacticalFlyingOnlyMesh (count: %d)"),
-				Index, TacticalFlyingOnlyMesh->GetInstanceCount());
-		}
-		break;
+		return RemoveIfValid(TacticalFlyingOnlyMesh, TEXT("TacticalFlyingOnlyMesh"));
 	default:
-		UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: Unknown TileType %d"), TileType);
+		// Check if it's an EGridTacticalChannel value
+		switch (static_cast<EGridTacticalChannel>(TileType))
+		{
+		case EGridTacticalChannel::Obstacle:
+			return RemoveIfValid(TacticalObstacleMesh, TEXT("TacticalObstacleMesh"));
+		case EGridTacticalChannel::DoubleCost:
+			return RemoveIfValid(TacticalDoubleCostMesh, TEXT("TacticalDoubleCostMesh"));
+		case EGridTacticalChannel::TripleCost:
+			return RemoveIfValid(TacticalTripleCostMesh, TEXT("TacticalTripleCostMesh"));
+		case EGridTacticalChannel::FlyingOnly:
+			return RemoveIfValid(TacticalFlyingOnlyMesh, TEXT("TacticalFlyingOnlyMesh"));
+		default:
+			UE_LOG(LogTemp, Warning, TEXT("RemoveInstanceMesh: Unknown TileType %d"), TileType);
+			break;
+		}
 		break;
 	}
 	return false;
 }
 
-FHitResult AGridType::HitTraceGround(FVector Location, TArray<AActor*> ActorsToIgnore)
+FHitResult AGridType::HitTraceGround(FVector Location, TArray<AActor*> ActorsToIgnore) const
 {
 	FHitResult Hit;
 	FVector StartLocation = Location + FVector(0, 0, TraceRange);

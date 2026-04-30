@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "GameplayTagContainer.h"
+#include "GridTacticalTypes.h"
 #include "GridDataAsset.generated.h"
 
 class UStaticMesh;
@@ -50,6 +51,9 @@ struct FGridVisualData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid|Visual")
 	TObjectPtr<UMaterialInstance> UniversalMaterialInstance;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid|Visual")
+	TMap<FGameplayTag, EGridTacticalChannel> TacticalMapping;
 };
 
 

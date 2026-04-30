@@ -1,10 +1,12 @@
-// � 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel N�bile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// © 2026 Gabriel Nobile Diniz. All Rights Reserved.
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "GridDataComponent.h"
 #include "GameFramework/Actor.h"
+#include "GridTacticalTypes.h"
 #include "GridType.generated.h"
 
 UCLASS()
@@ -15,6 +17,7 @@ class SFAF_API AGridType : public AActor
 public:
 	// Sets default values for this actor's properties
 	AGridType();
+	void InitializeCollision() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -24,6 +27,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UGridDataComponent> GridDataComponent;
 
 private:
 
@@ -33,37 +38,39 @@ private:
 
 	float TraceSphereRadius = 1.f;
 
-	UInstancedStaticMeshComponent* GridMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USceneComponent> SceneRoot;
 
-	UInstancedStaticMeshComponent* TacticalObstacleMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInstancedStaticMeshComponent> GridMesh;
 
-	UInstancedStaticMeshComponent* TacticalDoubleCostMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInstancedStaticMeshComponent> TacticalObstacleMesh;
 
-	UInstancedStaticMeshComponent* TacticalTripleCostMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInstancedStaticMeshComponent> TacticalDoubleCostMesh;
 
-	UInstancedStaticMeshComponent* TacticalFlyingOnlyMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInstancedStaticMeshComponent> TacticalTripleCostMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInstancedStaticMeshComponent> TacticalFlyingOnlyMesh;
 
 public:
 
-	UFUNCTION(BlueprintCallable, Category = "Setter")
-	void SetInstancedMeshes(UInstancedStaticMeshComponent* Grid, UInstancedStaticMeshComponent* Obstacle,
-		UInstancedStaticMeshComponent* DoubleCost, UInstancedStaticMeshComponent* TripleCost,
-		UInstancedStaticMeshComponent* FlyingOnly);
+	UFUNCTION(BlueprintCallable, Category = "Default")
+	void ClearInstancedMeshes() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Default")
-	void ClearInstancedMeshes();
+	void AddInstanceMesh(int TileType, FTransform Transform) const;
 
 	UFUNCTION(BlueprintCallable, Category = "Default")
-	void AddInstanceMesh(int TileType, FTransform Transform);
+	bool RemoveInstanceMesh(int TileType, int Index) const;
 
 	UFUNCTION(BlueprintCallable, Category = "Default")
-	bool RemoveInstanceMesh(int TileType, int Index);
-
-	UFUNCTION(BlueprintCallable, Category = "Default")
-	FHitResult HitTraceGround(FVector Location, TArray<AActor*> ActorsToIgnore);
+	FHitResult HitTraceGround(FVector Location, TArray<AActor*> ActorsToIgnore) const;
 
 	UFUNCTION(BlueprintPure, Category = "Default")
 	float GetTraceSphereRange() const { return TraceSphereRadius; }
 
 };
-
