@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "GridDataComponent.h"
+#include "GridRuntimeStateComponent.h"
 #include "GameFramework/Actor.h"
 #include "GridTacticalTypes.h"
 #include "GridType.generated.h"
@@ -30,6 +31,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UGridDataComponent> GridDataComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UGridRuntimeStateComponent> GridRuntimeStateComponent;
+	
 private:
 
 	float GridVerticalDistance = 1.f;
@@ -72,5 +76,8 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Default")
 	float GetTraceSphereRange() const { return TraceSphereRadius; }
+
+	UFUNCTION(BlueprintCallable, Category = "Grid")
+	void GenerateGrid();
 
 };

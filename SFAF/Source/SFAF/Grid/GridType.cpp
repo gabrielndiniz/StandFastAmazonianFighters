@@ -3,6 +3,8 @@
 
 #include "Grid/GridType.h"
 #include "Grid/GridTacticalTypes.h"
+#include "Grid/GridModifier.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 // Sets default values
 AGridType::AGridType()
@@ -31,15 +33,6 @@ AGridType::AGridType()
 	TacticalFlyingOnlyMesh->SetupAttachment(SceneRoot);
 }
 
-void AGridType::InitializeCollision() const
-{
-	GridMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Block);
-	TacticalObstacleMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Ignore);
-	TacticalDoubleCostMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Ignore);
-	TacticalTripleCostMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Ignore);
-	TacticalFlyingOnlyMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Ignore);
-}
-
 // Called when the game starts or when spawned
 void AGridType::BeginPlay()
 {
@@ -53,6 +46,15 @@ void AGridType::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	// No per-frame updates needed
+}
+
+void AGridType::InitializeCollision() const
+{
+	GridMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Block);
+	TacticalObstacleMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Ignore);
+	TacticalDoubleCostMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Ignore);
+	TacticalTripleCostMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Ignore);
+	TacticalFlyingOnlyMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel4, ECR_Ignore);
 }
 
 void AGridType::ClearInstancedMeshes() const
@@ -223,4 +225,88 @@ FHitResult AGridType::HitTraceGround(FVector Location, TArray<AActor*> ActorsToI
 	}
 
 	return FHitResult();
+}
+
+void AGridType::GenerateGrid() //TODO fix this accordingly
+{
+	if (!GridDataComponent || !GridDataComponent->GetGridDataAsset())
+	{
+		UE_LOG(LogTemp, Error, TEXT("GenerateGrid: GridDataComponent or GridDataAsset is null!"));
+		return;
+	}
+
+	ClearInstancedMeshes();
+
+	FIntPoint TileCount = GridDataComponent->GetNumberOfTileCount();
+	FVector TileSize = GridDataComponent->GetTileSize();
+	FVector StartLoc = GridDataComponent->GetInitialSpawnLocation();
+	bool bSpawnAround = GridDataComponent->GetSpawnAroundGivenLocation();
+
+	// Calculate bounds for modifier search
+	FVector GridHalfSize = FVector(TileCount.X * TileSize.X * 0.5f, TileCount.Y * TileSize.Y * 0.5f, 500.f);
+	FVector GridCenter = StartLoc;
+	if (!bSpawnAround)
+	{
+		GridCenter += FVector(GridHalfSize.X, GridHalfSize.Y, 0.f);
+	}
+
+	// 1. Find all modifiers in the area
+	TArray<AActor*> OverlappingModifiers;
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldDynamic));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldStatic));
+
+	UKismetSystemLibrary::BoxOverlapActors(
+		GetWorld(),
+		GridCenter,
+		GridHalfSize,
+		ObjectTypes,
+		AGridModifier::StaticClass(),
+		TArray<AActor*>(),
+		OverlappingModifiers
+	);
+
+	// 2. Loop through tiles
+	for (int32 x = 0; x < TileCount.X; ++x)
+	{
+		for (int32 y = 0; y < TileCount.Y; ++y)
+		{
+			FVector Offset;
+			if (bSpawnAround)
+			{
+				Offset = FVector(
+					(x - TileCount.X * 0.5f) * TileSize.X + TileSize.X * 0.5f,
+					(y - TileCount.Y * 0.5f) * TileSize.Y + TileSize.Y * 0.5f,
+					0.f
+				);
+			}
+			else
+			{
+				Offset = FVector(x * TileSize.X, y * TileSize.Y, 0.f);
+			}
+
+			FVector TileTargetLoc = StartLoc + Offset;
+			FHitResult Hit = HitTraceGround(TileTargetLoc, TArray<AActor*>());
+
+			if (Hit.bBlockingHit)
+			{
+				FTransform TileTransform(Hit.ImpactPoint + FVector(0.f, 0.f, GridVerticalDistance));
+				
+				// Add base mesh
+				AddInstanceMesh(1, TileTransform);
+
+				// 3. Check for modifiers on this tile
+				for (AActor* ModActor : OverlappingModifiers)
+				{
+					if (AGridModifier* Modifier = Cast<AGridModifier>(ModActor))
+					{
+						if (Modifier->AffectsPosition(TileTransform.GetLocation()))
+						{
+							
+						}
+					}
+				}
+			}
+		}
+	}
 }
