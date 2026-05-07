@@ -39,6 +39,8 @@ void AGridType::BeginPlay()
 	Super::BeginPlay();
 	
 	InitializeCollision();
+	
+	ShowTacticalGrid(false);
 }
 
 // Called every frame (disabled in constructor for performance)
@@ -309,4 +311,12 @@ void AGridType::GenerateGrid() //TODO fix this accordingly
 			}
 		}
 	}
+}
+
+void AGridType::ShowTacticalGrid(bool bShow)
+{
+	TacticalObstacleMesh->SetVisibility(bShow);
+	TacticalDoubleCostMesh->SetVisibility(bShow);
+	TacticalTripleCostMesh->SetVisibility(bShow);
+	TacticalFlyingOnlyMesh->SetVisibility(bShow);
 }

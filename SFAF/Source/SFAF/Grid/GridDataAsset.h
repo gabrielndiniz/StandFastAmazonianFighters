@@ -142,49 +142,21 @@ public:
 
 
 	UFUNCTION(BlueprintCallable, Category = "Grid")
-	bool GetGridVisualData(FGameplayTag Tag, FGridVisualData& OutData) const
-	{
-		if (const FGridVisualData* Data = GridVisualDefinitions.Find(Tag))
-		{
-			OutData = *Data;
-			return true;
-		}
-		return false;
-	}
+	bool GetGridVisualData(FGameplayTag Tag, FGridVisualData& OutData) const;
+	
 
 
 	UFUNCTION(BlueprintCallable, Category = "Grid")
-	bool GetGridSizeData(FGameplayTag Tag, FGridSizeData& OutData) const
-	{
-		if (const FGridSizeData* Data = GridSizeDefinitions.Find(Tag))
-		{
-			OutData = *Data;
-			return true;
-		}
-		return false;
-	}
+	bool GetGridSizeData(FGameplayTag Tag, FGridSizeData& OutData) const;
+
 
 
 	UFUNCTION(BlueprintCallable, Category = "Grid")
-	bool GetGridTypeData(FGameplayTag Tag, FGridTypeData& OutData) const
-	{
-		if (const FGridTypeData* Data = GridTypeDefinitions.Find(Tag))
-		{
-			OutData = *Data;
-			return true;
-		}
-		return false;
-	}
+	bool GetGridTypeData(FGameplayTag Tag, FGridTypeData& OutData) const;
+
 
 
 	UFUNCTION(BlueprintCallable, Category = "Grid")
-	bool GetGridCostData(FGameplayTag Tag, FGridCostData& OutData) const
-	{
-		if (const FGridCostData* Data = GridCostDefinitions.Find(Tag))
-		{
-			OutData = *Data;
-			return true;
-		}
-		return false;
-	}
+	bool GetGridCostData(FGameplayTag Tag, FGridCostData& OutData) const;
+
 };

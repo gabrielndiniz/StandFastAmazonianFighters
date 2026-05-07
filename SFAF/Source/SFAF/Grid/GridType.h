@@ -59,6 +59,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInstancedStaticMeshComponent> TacticalFlyingOnlyMesh;
+	
+	//TODO: Mapped State to tile pathfind
 
 public:
 
@@ -80,4 +82,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	void GenerateGrid();
 
+	UFUNCTION(BlueprintCallable, Category = "Grid")
+	void ShowTacticalGrid(bool bShow);
 };
