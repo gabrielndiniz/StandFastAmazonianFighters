@@ -86,3 +86,9 @@ SFAF/Content/LevelPrototyping/*
 
 #Unreal Engine 5.4 backup
 SFAF_5_4/
+
+.idea/
+*.iml
+
+# Aider (AI coding assistant)
+.aider*

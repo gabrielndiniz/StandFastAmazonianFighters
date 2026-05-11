@@ -1,4 +1,22 @@
 # Auto detect text files and perform LF normalization
 * text=auto
-*.cpp text eol=lf diff=cpp
-*.h text eol=lf diff=cpp
+
+# C++ source — UTF-8 com BOM (padrão do Unreal Engine)
+*.cpp  text eol=lf diff=cpp working-tree-encoding=UTF-8-BOM
+*.h    text eol=lf diff=cpp working-tree-encoding=UTF-8-BOM
+*.hpp  text eol=lf diff=cpp working-tree-encoding=UTF-8-BOM
+
+# Unreal project files
+*.uproject  text eol=lf
+*.uplugin   text eol=lf
+*.ini       text eol=lf
+*.cs        text eol=lf
+
+# Binários do UE — nunca tocar
+*.uasset  binary
+*.umap    binary
+*.pak     binary
+*.png     binary
+*.jpg     binary
+*.wav     binary
+*.mp3     binary
