@@ -1,0 +1,48 @@
+
+# 2026-05-11 16:58:25.959023
++n
+
+# 2026-05-11 16:58:33.243320
++$env:OLLAMA_API_BASE="http://localhost:11434"
+
+# 2026-05-11 16:58:39.116432
++y
+
+# 2026-05-11 17:04:12.840089
++exit
+
+# 2026-05-11 17:12:20.654187
++y
+
+# 2026-05-11 17:16:03.680851
++estamos online?
+
+# 2026-05-11 17:17:43.272378
++comece me dizendo como corrigir esse erro E:\Unreal
++Projects\StandFastAmazonianFighters\StandFastAmazonianFighters\SFAF\Source\SFAF\Grid\GridRuntimeStateComponent.h:
++'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
++Use --encoding to set the unicode encoding.
+
+# 2026-05-11 17:22:38.324753
++ok, tamo on filho?
+
+# 2026-05-11 17:26:13.874775
++tamo on?
+
+# 2026-05-11 17:27:47.285885
++me diga o que vc consegue entender do meu projeto pelo meu código?
+
+# 2026-05-11 17:30:21.186584
++eu ainda estou me ajeitando aqui, pq na verdade a maior parte das classes tem representantes em blueprint. BP_ alguma coisa. consegue enxergar isso? Eu estou fazendo uma refatoracao de blueprint para c e utilizando GAS
+
+# 2026-05-11 17:32:15.921022
++blz. por enquanto só estou testando. guarde essas informacoes e depois retomamos. pode ser?
+
+# 2026-05-11 18:22:30.340057
++todos os cpp e h em Source precisa ficar UTF-8 SEM BOM. modifica para mim, refatore para que fique 100%. inclusive cuidado com os comentários
+
+# 2026-05-11 18:29:46.883577
++y
+
+# 2026-05-11 18:29:55.653470
++a

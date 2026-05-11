@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="227907c4-5ec1-4c24-8d97-eadb596fa996" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Config/DefaultGame.ini" beforeDir="false" afterPath="$PROJECT_DIR$/Config/DefaultGame.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Characters/Actions/Pathfinding/BP_ActionFindPathToTarget.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Characters/Actions/Pathfinding/BP_ActionFindPathToTarget.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Characters/Actions/Pathfinding/BP_ActionShowTileNeighbor.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Characters/Actions/Pathfinding/BP_ActionShowTileNeighbor.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Characters/Actions/StandardPlayActions/BP_ActionHoverTile.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Characters/Actions/StandardPlayActions/BP_ActionHoverTile.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Characters/Actions/StandardPlayActions/BP_ActionSelectTile.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Characters/Actions/StandardPlayActions/BP_ActionSelectTile.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Ground/Terrain/BP_Grid.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Ground/Terrain/BP_Grid.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/AI/AIPawn.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/AI/AIPawn.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/AI/AIPawn.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/AI/AIPawn.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Actions/ActionBase.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Actions/ActionBase.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Actions/ActionBase.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Actions/ActionBase.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Combatant/CombatantDatabaseDataAsset.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Combatant/CombatantDatabaseDataAsset.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Combatant/CombatantDatabaseDataAsset.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Combatant/CombatantDatabaseDataAsset.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Combatant/Combatant_Base.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Combatant/Combatant_Base.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Combatant/Combatant_Base.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Combatant/Combatant_Base.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Grid/GridDataAsset.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Grid/GridDataAsset.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Grid/GridDataComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Grid/GridDataComponent.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Grid/GridDataComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Grid/GridDataComponent.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Grid/GridModifier.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Grid/GridModifier.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Grid/GridModifier.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Grid/GridModifier.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Grid/GridModifierTypes.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Grid/GridModifierTypes.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Grid/GridModifierTypes.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Grid/GridModifierTypes.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Grid/GridRuntimeStateComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Grid/GridRuntimeStateComponent.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Grid/GridRuntimeStateComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Grid/GridRuntimeStateComponent.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Grid/GridTacticalTypes.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Grid/GridTacticalTypes.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Grid/GridTacticalTypes.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Grid/GridTacticalTypes.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/SFAF/Grid/GridType.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/SFAF/Grid/GridType.cpp" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 4
+}]]></component>
+  <component name="ProjectId" id="3Datbwe32oaqtG4JoheDJrnB8om" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="227907c4-5ec1-4c24-8d97-eadb596fa996" name="Changes" comment="" />
+      <created>1778532087850</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1778532087850</updated>
+    </task>
+    <servers />
+  </component>
+</project>
