@@ -92,3 +92,4 @@ SFAF_5_4/
 
 # Aider (AI coding assistant)
 .aider*
+.aider.tags.cache.v4/cache.db-wal
