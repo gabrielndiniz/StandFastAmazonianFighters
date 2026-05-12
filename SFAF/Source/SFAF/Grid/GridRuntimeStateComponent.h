@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Components/ActorComponent.h"
 #include "GridRuntimeStateComponent.generated.h"
 
@@ -13,22 +14,22 @@ struct FGridTileRuntimeState
 {
 	GENERATED_BODY()
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	bool bHovered = false;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	bool bSelected = false;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	bool bInPath = false;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	bool bIsNeighbor = false;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	bool bIsDiscovered = false;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	bool bIsAnalyzed = false;
 };
 
@@ -37,12 +38,13 @@ struct FGridTileOccupancy
 {
 	GENERATED_BODY()
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	TWeakObjectPtr<AActor> OccupyingUnit = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	TWeakObjectPtr<UAbilitySystemComponent> UnitASC;
 	
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	bool bIsBlocked = false;
 };
 
@@ -51,14 +53,33 @@ struct FGridCellRuntimeData
 {
 	GENERATED_BODY()
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	FGridTileRuntimeState State;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	FGridTileOccupancy Occupancy;
 };
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+USTRUCT(BlueprintType)
+struct FGridTileRuntimeData
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly, Category = "Grid")
+    FIntPoint Coord;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Grid")
+    FVector WorldLocation;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+    int32 InstanceIndex = INDEX_NONE;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Grid")
+    FGameplayTagContainer TileTags;
+};
+
+
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SFAF_API UGridRuntimeStateComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -75,5 +96,5 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-		
+
 };
