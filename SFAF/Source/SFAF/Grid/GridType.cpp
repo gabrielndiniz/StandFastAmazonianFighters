@@ -13,6 +13,7 @@ AGridType::AGridType()
 	PrimaryActorTick.bCanEverTick = false;
 
 	GridDataComponent = CreateDefaultSubobject<UGridDataComponent>(TEXT("GridDataComponent"));
+	GridRuntimeStateComponent = CreateDefaultSubobject<UGridRuntimeStateComponent>(TEXT("GridRuntimeStateComponent"));
 	
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
@@ -37,6 +38,12 @@ AGridType::AGridType()
 void AGridType::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Type.Obstacle"), TacticalObstacleMesh);
+	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Cost.Double"), TacticalDoubleCostMesh);
+	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Cost.Triple"), TacticalTripleCostMesh);
+	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Type.FlyingOnly"), TacticalFlyingOnlyMesh);
+
 	
 	InitializeCollision();
 	
@@ -88,54 +95,36 @@ void AGridType::ClearInstancedMeshes() const
 	}
 }
 
-void AGridType::AddInstanceMesh(int TileType, FTransform Transform) const
+UInstancedStaticMeshComponent* AGridType::SelectTacticMeshWithTag(FGameplayTag GridModifierTag) const
 {
-	// Add instance based on tile type or tactical channel
-	switch (TileType)
+	if (const TObjectPtr<UInstancedStaticMeshComponent>* FoundMesh = TacticalModifiersMeshes.Find(GridModifierTag))
 	{
-	case 1:
-		if (GridMesh)
-			GridMesh->AddInstance(Transform, true);
-		break;
-	case 2:
-		if (TacticalObstacleMesh)
-			TacticalObstacleMesh->AddInstance(Transform, true);
-		break;
-	case 3:
-		if (TacticalDoubleCostMesh)
-			TacticalDoubleCostMesh->AddInstance(Transform, true);
-		break;
-	case 4:
-		if (TacticalTripleCostMesh)
-			TacticalTripleCostMesh->AddInstance(Transform, true);
-		break;
-	case 5:
-		if (TacticalFlyingOnlyMesh)
-			TacticalFlyingOnlyMesh->AddInstance(Transform, true);
-		break;
-	default:
-		// Check if it's an EGridTacticalChannel value
-		switch (static_cast<EGridTacticalChannel>(TileType))
+		if (*FoundMesh)
 		{
-		case EGridTacticalChannel::Obstacle:
-			if (TacticalObstacleMesh) TacticalObstacleMesh->AddInstance(Transform, true);
-			break;
-		case EGridTacticalChannel::DoubleCost:
-			if (TacticalDoubleCostMesh) TacticalDoubleCostMesh->AddInstance(Transform, true);
-			break;
-		case EGridTacticalChannel::TripleCost:
-			if (TacticalTripleCostMesh) TacticalTripleCostMesh->AddInstance(Transform, true);
-			break;
-		case EGridTacticalChannel::FlyingOnly:
-			if (TacticalFlyingOnlyMesh) TacticalFlyingOnlyMesh->AddInstance(Transform, true);
-			break;
-		default:
-			if (GridMesh)
-				GridMesh->AddInstance(Transform, true);
-			UE_LOG(LogTemp, Warning, TEXT("AddInstanceMesh: Unknown TileType %d"), TileType);
-			break;
+			return FoundMesh->Get();
 		}
-		break;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("SelectTacticMeshWithTag: No mesh found for tag %s"),
+		*GridModifierTag.ToString());
+	return nullptr;
+}
+
+void AGridType::AddInstanceMesh(const FGameplayTag& TileTypeTag, const FGameplayTagContainer& TileTags, const FTransform& Transform) const
+{
+	// Sempre adiciona o mesh base
+	if (GridMesh)
+	{
+		GridMesh->AddInstance(Transform, true);
+	}
+
+	// Verifica cada tag da tile e adiciona overlay tático correspondente
+	for (const FGameplayTag& Tag : TileTags)
+	{
+		if (UInstancedStaticMeshComponent* TacticMesh = SelectTacticMeshWithTag(Tag))
+		{
+			TacticMesh->AddInstance(Transform, true);
+		}
 	}
 }
 
@@ -295,7 +284,7 @@ void AGridType::GenerateGrid() //TODO fix this accordingly
 				FTransform TileTransform(Hit.ImpactPoint + FVector(0.f, 0.f, GridVerticalDistance));
 				
 				// Add base mesh
-				AddInstanceMesh(1, TileTransform);
+				//AddInstanceMesh(1, TileTransform);
 
 				// 3. Check for modifiers on this tile
 				for (AActor* ModActor : OverlappingModifiers)
@@ -320,3 +309,14 @@ void AGridType::ShowTacticalGrid(bool bShow)
 	TacticalTripleCostMesh->SetVisibility(bShow);
 	TacticalFlyingOnlyMesh->SetVisibility(bShow);
 }
+
+FIntPoint AGridType::GetFirstTile() const
+{
+	return FirstTile;
+}
+
+FIntPoint AGridType::GetLastTile() const
+{
+	return LastTile;
+}
+

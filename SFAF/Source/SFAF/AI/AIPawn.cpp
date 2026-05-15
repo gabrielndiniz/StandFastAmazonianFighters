@@ -35,6 +35,20 @@ void AAIPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	// No input bindings needed for AI pawn
 }
 
+void AAIPawn::SetLocationsAndSpells(const TArray<FIntPoint>& Points, int32 Spell)
+{
+	LocationsInRange = Points;
+	SpellLength = Spell;
+}
+
+void AAIPawn::RestartSpellLoop()
+{
+	SpellLoopCounter = 0;
+	SpellArrayIndex = 0;
+	LocationsInRangeLoopCounter = 0;
+	LocationsInRangeArrayIndex = 0;
+}
+
 FIntVector AAIPawn::LocationAndSpellLoop()
 {
 	// Increment counters
@@ -84,6 +98,22 @@ FIntVector AAIPawn::LocationAndSpellLoop()
 	return FIntVector(CurrentLocation.X, CurrentLocation.Y, SpellArrayIndex);
 }
 
+FIntPoint AAIPawn::DebugSpellCounter() const
+{
+	return FIntPoint(SpellLoopCounter, LocationsInRangeLoopCounter);
+}
+
+void AAIPawn::SetCastLocations(const TArray<FIntPoint>& Points)
+{
+	CastLocation = Points;
+}
+
+void AAIPawn::RestartCastLocationLoop()
+{
+	CastLocationLoopCounter = 0;
+	CastLocationArrayIndex = 0;
+}
+
 FIntPoint AAIPawn::CastLocationLoop()
 {
 	// Increment counters
@@ -115,6 +145,11 @@ FIntPoint AAIPawn::CastLocationLoop()
 
 	// Return current cast location
 	return CastLocation[CastLocationArrayIndex - 1];
+}
+
+int32 AAIPawn::DebugLocationCounter() const
+{
+	return CastLocationLoopCounter;
 }
 
 float AAIPawn::CalculateSpellImpact(
@@ -187,5 +222,10 @@ float AAIPawn::CalcMiddle(FIntPoint Value)
 {
 	// Calculate the average of X and Y values
 	return (static_cast<float>(Value.X) + static_cast<float>(Value.Y)) * 0.5f;
+}
+
+bool AAIPawn::CanUnitBeKilled(int32 HP, FIntPoint Damage)
+{
+	return HP <= Damage.Y;
 }
 

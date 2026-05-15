@@ -11,6 +11,10 @@
 class UAbilitySystemComponent;
 class UAttributeSet;
 
+// ---------------------------------------------------------------------------
+// Actor
+// ---------------------------------------------------------------------------
+
 UCLASS()
 class SFAF_API ACombatant_Base : public ACharacter, public IAbilitySystemInterface
 {
@@ -19,24 +23,46 @@ class SFAF_API ACombatant_Base : public ACharacter, public IAbilitySystemInterfa
 public:
 	ACombatant_Base();
 
+	// -----------------------------------------------------------------------
+	// Interface
+	// -----------------------------------------------------------------------
+
+	/** Returns the ability system component for this unit */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
+	// -----------------------------------------------------------------------
+	// API
+	// -----------------------------------------------------------------------
+
+	/** Returns the gameplay tag identifying the unit type */
 	UFUNCTION(BlueprintCallable, Category="Combatant|GAS")
 	FGameplayTag GetUnitTypeTag() const { return UnitTypeTag; }
 	
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combatant|GAS")
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combatant|GAS")
-	TObjectPtr<UAttributeSet> AttributeSet;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combatant|Unit")
-	FGameplayTag UnitTypeTag;
-	
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 
+	/** Initialize GAS actor info */
 	void InitAbilityActorInfo();
+
+	// -----------------------------------------------------------------------
+	// Components
+	// -----------------------------------------------------------------------
+
+	/** Ability System Component for GAS integration */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combatant|GAS")
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+
+	/** Attribute Set for unit statistics */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combatant|GAS")
+	TObjectPtr<UAttributeSet> AttributeSet;
+
+	// -----------------------------------------------------------------------
+	// Data
+	// -----------------------------------------------------------------------
+
+	/** Gameplay tag representing the unit type */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combatant|Unit")
+	FGameplayTag UnitTypeTag;
 };

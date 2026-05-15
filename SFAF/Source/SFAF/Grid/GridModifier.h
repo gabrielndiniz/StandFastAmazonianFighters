@@ -12,6 +12,10 @@
 class UBoxComponent;
 class UStaticMeshComponent;
 
+// ---------------------------------------------------------------------------
+// Actor
+// ---------------------------------------------------------------------------
+
 UCLASS()
 class SFAF_API AGridModifier : public AActor
 {
@@ -21,41 +25,69 @@ public:
 	// Sets default values for this actor's properties
 	AGridModifier();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UBoxComponent> Volume;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UStaticMeshComponent> PreviewMesh;
-
-	UPROPERTY(EditAnywhere, Category = "Grid")
-	FGameplayTag TileTypeTag;
-
-	UPROPERTY(EditAnywhere, Category = "Grid")
-	int32 CostValue = 0;
-
-	UPROPERTY(EditAnywhere, Category = "Grid")
-	int32 Priority = 0;
-
-	bool AffectsPosition(const FVector& WorldPos) const;
+	// -----------------------------------------------------------------------
+	// API
+	// -----------------------------------------------------------------------
 	
-	UPROPERTY(EditAnywhere, Category = "Grid")
-	FGameplayTagContainer AdditionalTags;
-	
+	/** Change Preview Visibility */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	void SetPreviewVisible(bool bVisible);
 	
+	/** Apply the modifier effect to tile data */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	void ApplyToTile(FGameplayTag& InOutTileType, int32& InOutCost, FGameplayTagContainer& InOutTags) const;
 	
-	UPROPERTY(EditAnywhere)
+	/** Returns the Tile Type Tag associated with this modifier */
+	UFUNCTION(BlueprintCallable, Category = "Grid")
+	FGameplayTag GetTileModificationTag() const;
+	
+	/** Returns additional tags to be applied to the tile */
+	UFUNCTION(BlueprintCallable, Category = "Grid")
+	FGameplayTagContainer GetTileTags() const;
+
+	/** Checks if a world position is within the modifier's volume */
+	bool AffectsPosition(const FVector& WorldPos) const;
+
+	// -----------------------------------------------------------------------
+	// Components
+	// -----------------------------------------------------------------------
+	
+	/** Collision volume defining the area of effect */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UBoxComponent> Volume;
+
+	/** Visual preview of the modifier in the editor */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UStaticMeshComponent> PreviewMesh;	
+
+	// -----------------------------------------------------------------------
+	// Configuration
+	// -----------------------------------------------------------------------
+
+	/** The modification type tag to apply */
+	UPROPERTY(EditAnywhere, Category = "Grid")
+	FGameplayTag TileModificationTag;
+
+	/** Movement cost value-added or overridden */
+	UPROPERTY(EditAnywhere, Category = "Grid")
+	int32 CostValue = 0;
+
+	/** Priority for resolving multiple overlapping modifiers */
+	UPROPERTY(EditAnywhere, Category = "Grid")
+	int32 Priority = 0;
+	
+	/** All gameplay tags to add to affected tiles */
+	UPROPERTY(EditAnywhere, Category = "Grid")
+	FGameplayTagContainer TileTags;	
+	
+	/** How the cost should be applied (Add, Override, etc.) */
+	UPROPERTY(EditAnywhere, Category = "Grid")
 	EGridModifierMode CostMode = EGridModifierMode::Override;
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 };

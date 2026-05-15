@@ -40,18 +40,28 @@ void AGridModifier::ApplyToTile(FGameplayTag& InOutTileType, int32& InOutCost, F
 	}
 
 	// Apply tile type override (if valid)
-	if (TileTypeTag.IsValid())
+	if (TileModificationTag.IsValid())
 	{
-		InOutTileType = TileTypeTag;
+		InOutTileType = TileModificationTag;
 	}
 
 	// Apply additional tags
-	if (!AdditionalTags.IsEmpty())
+	if (!TileTags.IsEmpty())
 	{
-		InOutTags.AppendTags(AdditionalTags);
+		InOutTags.AppendTags(TileTags);
 	}
 
 	// Note: TacticalType handling is currently done in GridType.cpp
+}
+
+FGameplayTag AGridModifier::GetTileModificationTag() const
+{
+	return TileModificationTag;
+}
+
+FGameplayTagContainer AGridModifier::GetTileTags() const
+{
+	return TileTags;
 }
 
 bool AGridModifier::AffectsPosition(const FVector& WorldPos) const

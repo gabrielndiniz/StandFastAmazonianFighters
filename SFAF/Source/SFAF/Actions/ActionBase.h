@@ -6,6 +6,10 @@
 #include "GameFramework/Actor.h"
 #include "ActionBase.generated.h"
 
+// ---------------------------------------------------------------------------
+// Actor
+// ---------------------------------------------------------------------------
+
 UCLASS()
 class SFAF_API AActionBase : public AActor
 {
@@ -16,23 +20,29 @@ public:
 	AActionBase();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	
+	// -----------------------------------------------------------------------
+	// API
+	// -----------------------------------------------------------------------
+
+	/** Returns whether the action is ready to be executed */
 	UFUNCTION(BlueprintCallable, Category="Action")
 	bool GetReady() const {return bReady; }
 	
+	/** Sets the ready state of the action */
 	UFUNCTION(BlueprintCallable, Category="Action")
 	void SetReady(bool bIsReady) { bReady = bIsReady;};
 	
 protected:
-	UPROPERTY(BlueprintReadOnly)
+	// -----------------------------------------------------------------------
+	// State
+	// -----------------------------------------------------------------------
+
+	/** Flag indicating if the action is ready */
+	UPROPERTY(BlueprintReadOnly, Category="Action")
 	bool bReady = false;
-	
-	
-	
 };
