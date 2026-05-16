@@ -51,7 +51,7 @@ private:
 	float GridVerticalDistance = 1.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grid|Config", meta = (AllowPrivateAccess = "true"))
-	float TraceRange = 1000.f;
+	float TraceRange = 10000.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grid|Config", meta = (AllowPrivateAccess = "true"))
 	float TraceSphereRadius = 1.f;
@@ -73,8 +73,27 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInstancedStaticMeshComponent> TacticalFlyingOnlyMesh;
+		
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
+	FGameplayTagContainer StandardTileTags;
 	
-	//TODO: Mapped State to tile pathfind
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
+	FGameplayTagContainer EnvironmentTileTags;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
+	FGameplayTag TacticalVisualTag;
+	
+	/** Horizontal spacing multiplier between hex tiles (slight overlap adjustment) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
+	float XOffset = 0.501f;
+
+	/** Vertical spacing factor for hex grid layout (based on hex geometry ratio) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
+	float YOffset = 0.866025f * 2.3f;
+	
+	/** If needed, it is possible on this code to ignore specific actors */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
+	TArray<AActor*> ActorsToIgnore = TArray<AActor*>();
 
 public:
 	// -----------------------------------------------------------------------
@@ -91,7 +110,7 @@ public:
 
 	/** Add an Instanced Mesh */
 	UFUNCTION(BlueprintCallable, Category = "Grid|Visual")
-	void AddInstanceMesh(const FGameplayTag& TileTypeTag, const FGameplayTagContainer& TileTags, const FTransform& Transform) const;
+	void AddInstanceMesh(const FGameplayTagContainer& TileTags, const FTransform& Transform);
 
 	/** Remove an Instanced Mesh */
 	UFUNCTION(BlueprintCallable, Category = "Grid|Visual")
@@ -99,19 +118,33 @@ public:
 
 	/** Returns the Hits Results for tracing ground */
 	UFUNCTION(BlueprintCallable, Category = "Grid|Trace")
-	FHitResult HitTraceGround(FVector Location, TArray<AActor*> ActorsToIgnore) const;
+	FHitResult HitTraceGround(FVector Location) const;
 
 	/** Returns the Trace Sphere considered range */
 	UFUNCTION(BlueprintPure, Category = "Grid|Trace")
 	float GetTraceSphereRange() const { return TraceSphereRadius; }
+	
+	/** Used when spawning grid. Trace ground on Z axis to see where to locate a tile */
+	UFUNCTION()
+	bool TraceGround(FVector& Location, FGameplayTagContainer& TileTags, bool& bGridModifier,
+	                 FGameplayTag& ModifierTag, float& ZScale) const;
+
+	/** Add the Tile on the Grid*/
+	bool AddGridTileInstance(int32 TileIndex, const FTransform& TileTransform, FIntPoint TilePosition, bool bCheckForEquivalents,
+	                         const FGameplayTagContainer& TileTags, ACombatant_Base* UnitOnTile);
+	static bool CanAddTile(const FGameplayTagContainer& TileTags);
 
 	/** Generate the entire grid before player start playing */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
-	void GenerateGrid();
+	bool GenerateGrid(const FVector Location);
 
 	/** Set visibility for the Tactical Mesh */
 	UFUNCTION(BlueprintCallable, Category = "Grid|Visual")
 	void ShowTacticalGrid(bool bShow);
+	
+	/** Destroy all generated grid tiles and clear runtime data */
+	UFUNCTION(BlueprintCallable, Category = "Grid")
+	void DestroyGridTiles();
 	
 	/** Get the first tile from the Grid */
 	UFUNCTION(BlueprintCallable, Category = "Grid|Static")
@@ -121,22 +154,35 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Grid|Static")
 	FIntPoint GetLastTile () const;
 	
+	/** Returns true if the Grid is ready for combat*/
+	UFUNCTION(BlueprintCallable, Category = "Grid|Static")
+	bool GetIsReady() const;
+	
 protected:
 	// -----------------------------------------------------------------------
 	// Tile Data
 	// -----------------------------------------------------------------------
 
+	
 	UPROPERTY(BlueprintReadOnly, Category = "Grid|Tile")
-	FIntPoint FirstTile = FIntPoint(0, 0);
+	FIntPoint FirstTile = FIntPoint(TNumericLimits<int32>::Max(), 0);
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Grid|Tile")
 	FIntPoint LastTile = FIntPoint(0, 0);
-	
-private:
+			
+		
 	// -----------------------------------------------------------------------
 	// Internal Cache
 	// -----------------------------------------------------------------------
-
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Grid|Tile")
+	bool bReady;
+	
+private:
+			//Every Tactical variable and functions is used for debug
 	UPROPERTY()
 	TMap<FGameplayTag, TObjectPtr<UInstancedStaticMeshComponent>> TacticalModifiersMeshes;
+	
+	UPROPERTY()
+	TMap<FIntPoint, FGameplayTag> TacticalModifiersPositions;
 };

@@ -32,6 +32,24 @@ AGridType::AGridType()
 
 	TacticalFlyingOnlyMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("TacticalFlyingOnlyMesh"));
 	TacticalFlyingOnlyMesh->SetupAttachment(SceneRoot);
+	
+	TacticalVisualTag = FGameplayTag::RequestGameplayTag(TEXT("Grid.Visual.Black"));
+	
+	StandardTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Cost.Simple")));
+
+	StandardTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Visual.Green")));
+
+	StandardTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.Walkable")));
+
+	StandardTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Size.Standard")));
+	
+	EnvironmentTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Cost.Simple")));
+
+	EnvironmentTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Visual.Green")));
+
+	EnvironmentTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.Blocked")));
+
+	EnvironmentTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Size.Standard")));
 }
 
 // Called when the game starts or when spawned
@@ -42,6 +60,7 @@ void AGridType::BeginPlay()
 	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Type.Obstacle"), TacticalObstacleMesh);
 	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Cost.Double"), TacticalDoubleCostMesh);
 	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Cost.Triple"), TacticalTripleCostMesh);
+	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Type.Blocked"), TacticalTripleCostMesh);
 	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Type.FlyingOnly"), TacticalFlyingOnlyMesh);
 
 	
@@ -105,25 +124,21 @@ UInstancedStaticMeshComponent* AGridType::SelectTacticMeshWithTag(FGameplayTag G
 		}
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("SelectTacticMeshWithTag: No mesh found for tag %s"),
-		*GridModifierTag.ToString());
 	return nullptr;
 }
 
-void AGridType::AddInstanceMesh(const FGameplayTag& TileTypeTag, const FGameplayTagContainer& TileTags, const FTransform& Transform) const
+void AGridType::AddInstanceMesh(const FGameplayTagContainer& TileTags, const FTransform& Transform)
 {
-	// Sempre adiciona o mesh base
 	if (GridMesh)
 	{
 		GridMesh->AddInstance(Transform, true);
 	}
 
-	// Verifica cada tag da tile e adiciona overlay tático correspondente
 	for (const FGameplayTag& Tag : TileTags)
 	{
-		if (UInstancedStaticMeshComponent* TacticMesh = SelectTacticMeshWithTag(Tag))
+		if (UInstancedStaticMeshComponent* TacticalMesh = SelectTacticMeshWithTag(Tag))
 		{
-			TacticMesh->AddInstance(Transform, true);
+			TacticalMesh->AddInstance(Transform, true);
 		}
 	}
 }
@@ -191,7 +206,7 @@ bool AGridType::RemoveInstanceMesh(int TileType, int Index) const
 	return false;
 }
 
-FHitResult AGridType::HitTraceGround(FVector Location, TArray<AActor*> ActorsToIgnore) const
+FHitResult AGridType::HitTraceGround(FVector Location) const
 {
 	FHitResult Hit;
 	FVector StartLocation = Location + FVector(0, 0, TraceRange);
@@ -218,88 +233,211 @@ FHitResult AGridType::HitTraceGround(FVector Location, TArray<AActor*> ActorsToI
 	return FHitResult();
 }
 
-void AGridType::GenerateGrid() //TODO fix this accordingly
+bool AGridType::TraceGround(FVector& Location, FGameplayTagContainer& TileTags, bool& bGridModifier,
+                            FGameplayTag& ModifierTag, float& ZScale) const
+{
+	// First, check if there is a hit result
+	FHitResult Hit = HitTraceGround(Location);
+	if (!Hit.bBlockingHit)
+	{
+		TileTags = EnvironmentTileTags;
+		bGridModifier = false;
+		ModifierTag = FGameplayTag::EmptyTag;
+		ZScale = 1.f;
+		return false;
+	}
+			
+	// Second, check for a Modifier
+	float CorrectionFactor = 0.f;
+	if (AGridModifier* Modifier = Cast<AGridModifier>(Hit.GetActor()))
+	{
+		CorrectionFactor = 100.f;
+		TileTags = Modifier->GetTileTags();
+		bGridModifier = true;
+		ModifierTag = Modifier->GetTileModificationTag();
+		ZScale = Modifier->GetActorScale3D().Z;
+	}
+	else
+	{
+		TileTags = StandardTileTags;
+		bGridModifier = false;
+		ModifierTag = FGameplayTag::EmptyTag;
+		ZScale = 1.f;
+	}	
+	
+	// Third, calculate Z adjustment. The -1.f is for aesthetic depth.
+	float ZCorrection = Hit.Location.Z + TraceSphereRadius - 1.f; 
+	
+	ZCorrection = FMath::GridSnap(ZCorrection, GridDataComponent->GetTileSize().Z) - 
+		CorrectionFactor * Hit.GetActor()->GetActorScale3D().Z;
+	
+	Location.Z += ZCorrection;
+	return true;
+}
+
+bool AGridType::AddGridTileInstance(int32 TileIndex, const FTransform& TileTransform, FIntPoint TilePosition,
+                                    bool bCheckForEquivalents, const FGameplayTagContainer& TileTags, 
+                                    ACombatant_Base* UnitOnTile)
+{	
+	if (!CanAddTile(TileTags)) { return false; }
+	
+	// Register the last position
+	LastTile = TilePosition;
+	
+	// Only needed if it is possible to spawn a tile after play has started.
+	if (bCheckForEquivalents)
+	{
+		GridRuntimeStateComponent->RemoveTile(TilePosition);
+	}
+	
+	// Prepare tile data for registration
+	FGridTileStaticData TileStaticData;
+	TileStaticData.WorldLocation = TileTransform.GetLocation();
+	TileStaticData.InstanceIndex = TileIndex;
+	TileStaticData.TileTags = TileTags;
+	
+	FGridTileOccupancy Occupancy;
+	Occupancy.OccupyingUnit = UnitOnTile;
+	TileStaticData.Occupancy = Occupancy;
+	
+	AddInstanceMesh(TileTags, TileTransform);
+	GridRuntimeStateComponent->RegisterTile(TilePosition, TileStaticData);
+	
+	return true;
+	
+}
+
+bool AGridType::CanAddTile(const FGameplayTagContainer& TileTags)
+{
+	// A tile is only necessary if it can be walked upon or flown over
+	if (TileTags.HasTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.Walkable"))) ||
+		TileTags.HasTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.FlyingOnly"))))
+	{
+		return true;
+	}
+	
+	return false;
+}
+
+bool AGridType::GenerateGrid(const FVector Location)
 {
 	if (!GridDataComponent || !GridDataComponent->GetGridDataAsset())
 	{
 		UE_LOG(LogTemp, Error, TEXT("GenerateGrid: GridDataComponent or GridDataAsset is null!"));
-		return;
+		return false;
 	}
 
-	ClearInstancedMeshes();
-
-	FIntPoint TileCount = GridDataComponent->GetNumberOfTileCount();
-	FVector TileSize = GridDataComponent->GetTileSize();
-	FVector StartLoc = GridDataComponent->GetInitialSpawnLocation();
-	bool bSpawnAround = GridDataComponent->GetSpawnAroundGivenLocation();
-
-	// Calculate bounds for modifier search
-	FVector GridHalfSize = FVector(TileCount.X * TileSize.X * 0.5f, TileCount.Y * TileSize.Y * 0.5f, 500.f);
-	FVector GridCenter = StartLoc;
-	if (!bSpawnAround)
+	// Destroy existing tiles before generating new ones
+	DestroyGridTiles();
+	
+	GridDataComponent->SetInitialSpawnLocation(Location);
+		
+	// Applying visual data to the meshes
+	
+	// Set base grid mesh visual properties
+	FGridVisualData VisualData = GridDataComponent->GetVisualData();
+	
+	GridMesh->SetStaticMesh(VisualData.Plane);
+	GridMesh->SetMaterial(0, VisualData.PlaneBorderMaterialInstance);
+	
+	// Set tactical visualization properties
+	FGridVisualData TacticalVisualData; 
+	GridDataComponent->GetVisualDataByTag(TacticalVisualTag, TacticalVisualData);
+	
+	TacticalObstacleMesh->SetStaticMesh(TacticalVisualData.Solid);
+	TacticalObstacleMesh->SetMaterial(0, TacticalVisualData.SolidWithMoldureMaterialInstance);
+	
+	TacticalDoubleCostMesh->SetStaticMesh(TacticalVisualData.Solid);
+	TacticalDoubleCostMesh->SetMaterial(0, TacticalVisualData.PlaneMaterialInstance);
+	
+	TacticalFlyingOnlyMesh->SetStaticMesh(TacticalVisualData.Plane);
+	TacticalFlyingOnlyMesh->SetMaterial(0, TacticalVisualData.PlaneBorderMaterialInstance);
+	
+	// Prepare for grid generation loop
+	const FIntPoint TileCount = GridDataComponent->GetNumberOfTileCount();
+	const FVector TileSize = GridDataComponent->GetTileSize();
+	
+	int32 TileIndex = 0;
+	FTransform TileTransform = FTransform::Identity;
+	FIntPoint TilePosition = FIntPoint(0, 0);
+	bool bTileNeeded = false;
+	
+	// For Ground Tracing
+	FGameplayTagContainer TileTags = StandardTileTags;
+	FGameplayTag ModifierTag;
+	bool bGridModifier;
+	float ZScale = 1.f;
+		
+	// Loop through the grid dimensions
+	for (int32 x = 0; x < TileCount.X - 1; ++x)
 	{
-		GridCenter += FVector(GridHalfSize.X, GridHalfSize.Y, 0.f);
-	}
-
-	// 1. Find all modifiers in the area
-	TArray<AActor*> OverlappingModifiers;
-	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldDynamic));
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldStatic));
-
-	UKismetSystemLibrary::BoxOverlapActors(
-		GetWorld(),
-		GridCenter,
-		GridHalfSize,
-		ObjectTypes,
-		AGridModifier::StaticClass(),
-		TArray<AActor*>(),
-		OverlappingModifiers
-	);
-
-	// 2. Loop through tiles
-	for (int32 x = 0; x < TileCount.X; ++x)
-	{
-		for (int32 y = 0; y < TileCount.Y; ++y)
+		for (int32 y = 0; y < TileCount.Y - 1; ++y)
 		{
-			FVector Offset;
-			if (bSpawnAround)
-			{
-				Offset = FVector(
-					(x - TileCount.X * 0.5f) * TileSize.X + TileSize.X * 0.5f,
-					(y - TileCount.Y * 0.5f) * TileSize.Y + TileSize.Y * 0.5f,
-					0.f
-				);
-			}
-			else
-			{
-				Offset = FVector(x * TileSize.X, y * TileSize.Y, 0.f);
-			}
+			TilePosition = FIntPoint(x, y);
+			const float XTileLocation = XOffset * x;
 
-			FVector TileTargetLoc = StartLoc + Offset;
-			FHitResult Hit = HitTraceGround(TileTargetLoc, TArray<AActor*>());
+			// Even/odd row offset for hex staggering
+			const float YTileLocation = YOffset * y + ((x % 2 == 0) ? 0.f : 1.f);
+			
+			// These variables are only used if we have to spawn grid after play has started.
+			constexpr bool bCheckForEquivalents = false;
+			ACombatant_Base* UnitOnTile = nullptr;
 
-			if (Hit.bBlockingHit)
+			FVector TileLocation = Location + TileSize * FVector(XTileLocation, YTileLocation, 1.f);
+			
+			// TODO: Grid centering logic improvement needed. 
+			// Currently uses bSpawnAroundGivenLocation to decide tracing behavior.
+
+			if (GridDataComponent->GetSpawnAroundGivenLocation())
 			{
-				FTransform TileTransform(Hit.ImpactPoint + FVector(0.f, 0.f, GridVerticalDistance));
-				
-				// Add base mesh
-				//AddInstanceMesh(1, TileTransform);
-
-				// 3. Check for modifiers on this tile
-				for (AActor* ModActor : OverlappingModifiers)
+				if (TraceGround(TileLocation, TileTags, bGridModifier, ModifierTag, ZScale))
 				{
-					if (AGridModifier* Modifier = Cast<AGridModifier>(ModActor))
+					TileTransform.SetLocation(TileLocation);
+					bTileNeeded = AddGridTileInstance(TileIndex, TileTransform, TilePosition, bCheckForEquivalents,
+						TileTags, UnitOnTile);
+					
+					if (bGridModifier)
 					{
-						if (Modifier->AffectsPosition(TileTransform.GetLocation()))
+						TacticalModifiersPositions.Add(TilePosition, ModifierTag);
+						if (UInstancedStaticMeshComponent* ModMesh = SelectTacticMeshWithTag(ModifierTag))
 						{
-							
+							ModMesh->AddInstance(TileTransform, true);
 						}
+					}
+					
+					if (bTileNeeded)
+					{
+						TileIndex++;
 					}
 				}
 			}
+			else
+			{
+				TileTransform.SetLocation(TileLocation);
+				bTileNeeded = AddGridTileInstance(TileIndex, TileTransform, TilePosition, bCheckForEquivalents,
+					TileTags, UnitOnTile);
+				
+				if (bTileNeeded)
+				{
+					TileIndex++;
+				}
+			}
+			
+			if (FirstTile.X == TNumericLimits<int32>::Max() && bTileNeeded)
+			{
+				FirstTile = TilePosition;
+			}
 		}
 	}
+	
+	if (FirstTile.X == TNumericLimits<int32>::Max())
+	{
+		return false;
+	}
+	
+	// Grid generation complete
+	bReady = true;
+	return true;
 }
 
 void AGridType::ShowTacticalGrid(bool bShow)
@@ -310,6 +448,16 @@ void AGridType::ShowTacticalGrid(bool bShow)
 	TacticalFlyingOnlyMesh->SetVisibility(bShow);
 }
 
+void AGridType::DestroyGridTiles()
+{
+	ClearInstancedMeshes();
+
+	if (GridRuntimeStateComponent)
+	{
+		GridRuntimeStateComponent->ClearAllTiles();
+	}
+}
+
 FIntPoint AGridType::GetFirstTile() const
 {
 	return FirstTile;
@@ -318,5 +466,10 @@ FIntPoint AGridType::GetFirstTile() const
 FIntPoint AGridType::GetLastTile() const
 {
 	return LastTile;
+}
+
+bool AGridType::GetIsReady() const
+{
+	return bReady;
 }
 

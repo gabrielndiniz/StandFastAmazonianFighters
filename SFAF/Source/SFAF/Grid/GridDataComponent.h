@@ -29,6 +29,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	UGridDataAsset* GetGridDataAsset() const { return GridDataAsset; }
 	
+	/** Returns visual data from the data asset */
+	FGridVisualData GetVisualData() const;
+	
 	/** Returns visual data from the data asset by tag */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	bool GetVisualDataByTag(FGameplayTag Tag, FGridVisualData& OutData) const;

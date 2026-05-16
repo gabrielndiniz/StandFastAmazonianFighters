@@ -27,6 +27,11 @@ void UGridRuntimeStateComponent::RegisterTile(const FIntPoint& Coord, const FGri
     StaticTiles.Add(Coord, Data);
 }
 
+void UGridRuntimeStateComponent::RemoveTile(const FIntPoint& Coord)
+{
+    StaticTiles.Remove(Coord);
+}
+
 const FGridTileStaticData* UGridRuntimeStateComponent::GetStaticTile(const FIntPoint& Coord) const
 {
     return StaticTiles.Find(Coord);
@@ -99,7 +104,8 @@ int32 UGridRuntimeStateComponent::GetTilePathCost(bool bConsiderFlying, FGamepla
         {
             Cost = 2;
         }
-        else if (DataTags.HasTagExact(FGameplayTag::RequestGameplayTag("Grid.Cost.Triple")))
+        else if (DataTags.HasTagExact(FGameplayTag::RequestGameplayTag("Grid.Cost.Triple")) || 
+                 DataTags.HasTagExact(FGameplayTag::RequestGameplayTag("Grid.Type.Blocked")))
         {
             Cost = 3;
         }

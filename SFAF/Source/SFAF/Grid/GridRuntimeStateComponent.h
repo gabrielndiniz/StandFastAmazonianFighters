@@ -110,6 +110,10 @@ public:
     /** Register Static Data of Tile */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     void RegisterTile(const FIntPoint& Coord, const FGridTileStaticData& Data);
+    
+    /** Remove a specific tile*/
+    UFUNCTION(BlueprintCallable, Category = "Grid|Static")
+    void RemoveTile(const FIntPoint& Coord);
 
     /** Returns static data from tile (const) */
     const FGridTileStaticData* GetStaticTile(const FIntPoint& Coord) const;
@@ -149,7 +153,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     int32 GetNearestTileFromTargetPosition (const TArray<FIntPoint>& Positions, FIntPoint Target, bool bConsiderFlying) const;
     
-    /** Given an list, closest position considering costs. Returns its index on the list */
+    /** Given a list, closest position considering costs. Returns its index on the list */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     FGameplayTagContainer GetTileTags (FIntPoint Target) const;
         

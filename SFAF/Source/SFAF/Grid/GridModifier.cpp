@@ -29,7 +29,7 @@ void AGridModifier::SetPreviewVisible(bool bVisible)
 
 void AGridModifier::ApplyToTile(FGameplayTag& InOutTileType, int32& InOutCost, FGameplayTagContainer& InOutTags) const
 {
-	// Apply cost
+	// Apply cost modification
 	if (CostMode == EGridModifierMode::Override)
 	{
 		InOutCost = CostValue;
@@ -39,19 +39,19 @@ void AGridModifier::ApplyToTile(FGameplayTag& InOutTileType, int32& InOutCost, F
 		InOutCost += CostValue;
 	}
 
-	// Apply tile type override (if valid)
+	// Apply tile type override if valid
 	if (TileModificationTag.IsValid())
 	{
 		InOutTileType = TileModificationTag;
 	}
 
-	// Apply additional tags
+	// Append additional tags
 	if (!TileTags.IsEmpty())
 	{
 		InOutTags.AppendTags(TileTags);
 	}
 
-	// Note: TacticalType handling is currently done in GridType.cpp
+	// Note: Tactical visualization handling is managed by AGridType during generation
 }
 
 FGameplayTag AGridModifier::GetTileModificationTag() const
@@ -66,10 +66,13 @@ FGameplayTagContainer AGridModifier::GetTileTags() const
 
 bool AGridModifier::AffectsPosition(const FVector& WorldPos) const
 {
-	if (!Volume) return false;
+	if (!Volume)
+	{
+		return false;
+	}
 
-	FVector RelativePos = GetTransform().InverseTransformPosition(WorldPos);
-	FVector BoxExtent = Volume->GetUnscaledBoxExtent();
+	const FVector RelativePos = GetTransform().InverseTransformPosition(WorldPos);
+	const FVector BoxExtent = Volume->GetUnscaledBoxExtent();
 
 	return FMath::Abs(RelativePos.X) <= BoxExtent.X &&
 		   FMath::Abs(RelativePos.Y) <= BoxExtent.Y &&

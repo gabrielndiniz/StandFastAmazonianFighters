@@ -10,6 +10,16 @@ UGridDataComponent::UGridDataComponent()
 }
 
 
+FGridVisualData UGridDataComponent::GetVisualData() const
+{
+	FGridVisualData ReturnData;
+	if (GridDataAsset)
+	{
+		GridDataAsset->GetGridVisualData(GridVisualTag, ReturnData);
+	}
+	return ReturnData;
+}
+
 bool UGridDataComponent::GetVisualDataByTag(FGameplayTag Tag, FGridVisualData& OutData) const
 {
 	if (GridDataAsset)
