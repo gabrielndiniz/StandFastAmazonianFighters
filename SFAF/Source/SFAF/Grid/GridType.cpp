@@ -208,6 +208,8 @@ bool AGridType::RemoveInstanceMesh(int TileType, int Index) const
 
 FHitResult AGridType::HitTraceGround(FVector Location) const
 {
+	
+	
 	FHitResult Hit;
 	FVector StartLocation = Location + FVector(0, 0, TraceRange);
 	FVector EndLocation = Location - FVector(0, 0, TraceRange);
@@ -251,11 +253,16 @@ bool AGridType::TraceGround(FVector& Location, FGameplayTagContainer& TileTags, 
 	float CorrectionFactor = 0.f;
 	if (AGridModifier* Modifier = Cast<AGridModifier>(Hit.GetActor()))
 	{
-		CorrectionFactor = 100.f;
+		// In the case of Flying only, it should be above ground.
+		if (ModifierTag == FGameplayTag::RequestGameplayTag("Grid.Type.FlyingOnly"))
+		{
+			CorrectionFactor = Hit.GetActor()->GetComponentsBoundingBox().GetExtent().Z;
+		}
+		
 		TileTags = Modifier->GetTileTags();
 		bGridModifier = true;
 		ModifierTag = Modifier->GetTileModificationTag();
-		ZScale = Modifier->GetActorScale3D().Z;
+		ZScale = Modifier->GetActorScale3D().Z;		
 	}
 	else
 	{
@@ -265,13 +272,23 @@ bool AGridType::TraceGround(FVector& Location, FGameplayTagContainer& TileTags, 
 		ZScale = 1.f;
 	}	
 	
-	// Third, calculate Z adjustment. The -1.f is for aesthetic depth.
-	float ZCorrection = Hit.Location.Z + TraceSphereRadius - 1.f; 
+	// Third, calculate Z adjustment. The +1.f is for aesthetic depth.
 	
-	ZCorrection = FMath::GridSnap(ZCorrection, GridDataComponent->GetTileSize().Z) - 
-		CorrectionFactor * Hit.GetActor()->GetActorScale3D().Z;
+	float HitActorLocationZ =  Hit.GetActor()->GetActorLocation().Z;		
+	float ZCorrection = HitActorLocationZ + TraceSphereRadius + 1.f; 
+	
+	
+	const float GridSnapResult =
+	FMath::GridSnap(ZCorrection, GridDataComponent->GetTileSize().Z);
+
+	
+	
+	ZCorrection = GridSnapResult + 	CorrectionFactor;
 	
 	Location.Z += ZCorrection;
+	
+	
+		
 	return true;
 }
 
@@ -326,7 +343,8 @@ bool AGridType::GenerateGrid(const FVector Location)
 		UE_LOG(LogTemp, Error, TEXT("GenerateGrid: GridDataComponent or GridDataAsset is null!"));
 		return false;
 	}
-
+	
+	
 	// Destroy existing tiles before generating new ones
 	DestroyGridTiles();
 	
@@ -367,6 +385,7 @@ bool AGridType::GenerateGrid(const FVector Location)
 	FGameplayTag ModifierTag;
 	bool bGridModifier;
 	float ZScale = 1.f;
+	bool bSpawnOnEnvironment = GridDataComponent->GetSpawnOnEnvironment();
 		
 	// Loop through the grid dimensions
 	for (int32 x = 0; x < TileCount.X - 1; ++x)
@@ -379,25 +398,30 @@ bool AGridType::GenerateGrid(const FVector Location)
 			// Even/odd row offset for hex staggering
 			const float YTileLocation = YOffset * y + ((x % 2 == 0) ? 0.f : 1.f);
 			
+			
+			
 			// These variables are only used if we have to spawn grid after play has started.
 			constexpr bool bCheckForEquivalents = false;
 			ACombatant_Base* UnitOnTile = nullptr;
 
-			FVector TileLocation = Location + TileSize * FVector(XTileLocation, YTileLocation, 1.f);
+			FVector TileLocation = Location + TileSize * FVector(XTileLocation, YTileLocation, 0.1f);
 			
 			// TODO: Grid centering logic improvement needed. 
 			// Currently uses bSpawnAroundGivenLocation to decide tracing behavior.
 
-			if (GridDataComponent->GetSpawnAroundGivenLocation())
+			if (bSpawnOnEnvironment)
 			{
+				// Trace Ground for Z location and Grid Modifiers
 				if (TraceGround(TileLocation, TileTags, bGridModifier, ModifierTag, ZScale))
 				{
+					
 					TileTransform.SetLocation(TileLocation);
 					bTileNeeded = AddGridTileInstance(TileIndex, TileTransform, TilePosition, bCheckForEquivalents,
 						TileTags, UnitOnTile);
 					
 					if (bGridModifier)
 					{
+						
 						TacticalModifiersPositions.Add(TilePosition, ModifierTag);
 						if (UInstancedStaticMeshComponent* ModMesh = SelectTacticMeshWithTag(ModifierTag))
 						{
@@ -409,6 +433,12 @@ bool AGridType::GenerateGrid(const FVector Location)
 					{
 						TileIndex++;
 					}
+				}
+				else
+				{
+					
+					// No ground hit — skip tile
+					continue;
 				}
 			}
 			else
