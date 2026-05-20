@@ -1,6 +1,10 @@
 // © 2026 Gabriel Nobile Diniz. All Rights Reserved.
 
-#include "Grid/GridRuntimeStateComponent.h"
+#include "GridRuntimeStateComponent.h"
+#include "GridCoord.h"
+#include "GridMathLibrary.h"
+#include "Combatant/Combatant_Base.h"
+#include "Components/InstancedStaticMeshComponent.h"
 
 UGridRuntimeStateComponent::UGridRuntimeStateComponent()
 {
@@ -22,27 +26,27 @@ void UGridRuntimeStateComponent::TickComponent(float DeltaTime, ELevelTick TickT
 // Static Tile API
 // ---------------------------------------------------------------------------
 
-void UGridRuntimeStateComponent::RegisterTile(const FIntPoint& Coord, const FGridTileStaticData& Data)
+void UGridRuntimeStateComponent::RegisterTile(const FGridCoord& Coord, const FGridTileStaticData& Data)
 {
     StaticTiles.Add(Coord, Data);
 }
 
-void UGridRuntimeStateComponent::RemoveTile(const FIntPoint& Coord)
+void UGridRuntimeStateComponent::RemoveTile(const FGridCoord& Coord)
 {
     StaticTiles.Remove(Coord);
 }
 
-const FGridTileStaticData* UGridRuntimeStateComponent::GetStaticTile(const FIntPoint& Coord) const
+const FGridTileStaticData* UGridRuntimeStateComponent::GetStaticTile(const FGridCoord& Coord) const
 {
     return StaticTiles.Find(Coord);
 }
 
-FGridTileStaticData* UGridRuntimeStateComponent::GetMutableStaticTile(const FIntPoint& Coord)
+FGridTileStaticData* UGridRuntimeStateComponent::GetMutableStaticTile(const FGridCoord& Coord)
 {
     return StaticTiles.Find(Coord);
 }
 
-bool UGridRuntimeStateComponent::BP_GetStaticTile(const FIntPoint& Coord, FGridTileStaticData& OutTileData) const
+bool UGridRuntimeStateComponent::BP_GetStaticTile(const FGridCoord& Coord, FGridTileStaticData& OutTileData) const
 {
     const FGridTileStaticData* FoundTile =
         StaticTiles.Find(Coord);
@@ -57,12 +61,12 @@ bool UGridRuntimeStateComponent::BP_GetStaticTile(const FIntPoint& Coord, FGridT
     return true;
 }
 
-bool UGridRuntimeStateComponent::HasTile(const FIntPoint& Coord) const
+bool UGridRuntimeStateComponent::HasTile(const FGridCoord& Coord) const
 {
     return StaticTiles.Contains(Coord);
 }
 
-void UGridRuntimeStateComponent::SetTileOccupancy(const FIntPoint& Coord, const FGridTileOccupancy& Occupancy)
+void UGridRuntimeStateComponent::SetTileOccupancy(const FGridCoord& Coord, const FGridTileOccupancy& Occupancy)
 {
     if (FGridTileStaticData* Tile = StaticTiles.Find(Coord))
     {
@@ -70,7 +74,7 @@ void UGridRuntimeStateComponent::SetTileOccupancy(const FIntPoint& Coord, const 
     }
 }
 
-FGridTileOccupancy UGridRuntimeStateComponent::GetTileOccupancy(const FIntPoint& Coord) const
+FGridTileOccupancy UGridRuntimeStateComponent::GetTileOccupancy(const FGridCoord& Coord) const
 {
     if (const FGridTileStaticData* Tile = StaticTiles.Find(Coord))
     {
@@ -83,11 +87,12 @@ void UGridRuntimeStateComponent::ClearAllTiles()
 {
     StaticTiles.Empty();
     ClearAllStates();
+    ClearTacticalData();
 }
 
-TArray<FIntPoint> UGridRuntimeStateComponent::GetTilesWithStaticData() const
+TArray<FGridCoord> UGridRuntimeStateComponent::GetTilesWithStaticData() const
 {
-    TArray<FIntPoint> Result;
+    TArray<FGridCoord> Result;
 
     StaticTiles.GetKeys(Result);
 
@@ -96,88 +101,146 @@ TArray<FIntPoint> UGridRuntimeStateComponent::GetTilesWithStaticData() const
 
 int32 UGridRuntimeStateComponent::GetTilePathCost(bool bConsiderFlying, FGameplayTagContainer DataTags)
 {
+    if (DataTags.HasTagExact(FGameplayTag::RequestGameplayTag("Grid.Type.Blocked")))
+    {
+        return 999;
+    }
+
     int32 Cost = 1;
 
-    if (!bConsiderFlying)
+    if (DataTags.HasTagExact(FGameplayTag::RequestGameplayTag("Grid.Cost.Double")))
     {
-        if (DataTags.HasTagExact(FGameplayTag::RequestGameplayTag("Grid.Cost.Double")))
-        {
-            Cost = 2;
-        }
-        else if (DataTags.HasTagExact(FGameplayTag::RequestGameplayTag("Grid.Cost.Triple")) || 
-                 DataTags.HasTagExact(FGameplayTag::RequestGameplayTag("Grid.Type.Blocked")))
-        {
-            Cost = 3;
-        }
+        Cost = 2;
     }
+    else if (DataTags.HasTagExact(FGameplayTag::RequestGameplayTag("Grid.Cost.Triple")))
+    {
+        Cost = 3;
+    }
+
+    if (bConsiderFlying)
+    {
+        Cost = 1;
+    }
+    
     return Cost;
 }
 
-int32 UGridRuntimeStateComponent::GetNearestTileFromTargetPosition(const TArray<FIntPoint>& Positions, FIntPoint Target,
+int32 UGridRuntimeStateComponent::GetNearestTileFromTargetPosition(const TArray<FGridCoord>& Positions, FGridCoord Target,
                                                                    bool bConsiderFlying) const
 {
-    if (!HasTile(Target))
-    {
-        return INDEX_NONE;
-    }
-
-    if (Positions.IsEmpty())
-    {
-        return INDEX_NONE;
-    }
-
-    const FGridTileStaticData* TargetTile = GetStaticTile(Target);
-
-    if (!TargetTile)
-    {
-        return INDEX_NONE;
-    }
-
-    const FVector& TargetLocation = TargetTile->WorldLocation;
-
-    float BestDistance = TNumericLimits<float>::Max();
-
-    int32 BestIndex = INDEX_NONE;
-
-    for (int32 Index = 0; Index < Positions.Num(); ++Index)
-    {
-        const FIntPoint& TileCoord = Positions[Index];
-
-        const FGridTileStaticData* TileData =
-            GetStaticTile(TileCoord);
-
-        if (!TileData)
-        {
-            continue;
-        }
-        
-        FGameplayTagContainer DataTags = TileData->TileTags;
-
-        int32 CostMultiplier = GetTilePathCost(bConsiderFlying, DataTags);
-
-        const float Distance =
-            FVector::Distance(TargetLocation, TileData->WorldLocation) * CostMultiplier;
-
-        if (Distance < BestDistance)
-        {
-            BestDistance = Distance;
-            BestIndex = Index;
-        }
-    }
-
-    return BestIndex;
+    return UGridMathLibrary::FindNearestTileIndex(
+        Positions,
+        StaticTiles,
+        Target,
+        bConsiderFlying
+    );
 }
 
-FGameplayTagContainer UGridRuntimeStateComponent::GetTileTags(FIntPoint Target) const
+FGameplayTagContainer UGridRuntimeStateComponent::GetTileTags(FGridCoord Target) const
 {
     return GetStaticTile(Target)->TileTags;
+}
+
+FVector UGridRuntimeStateComponent::GetGridCenterLocation() const
+{
+    //TODO: Consider if spawn around location instead.
+    
+    // Retrieve static data for both corner tiles
+    const FGridTileStaticData* FirstData = GetStaticTile(FirstTile);
+    const FGridTileStaticData* LastData = GetStaticTile(LastTile);
+
+    // If both exist, return the average (midpoint) of their world locations
+    if (FirstData && LastData)
+    {
+        return (FirstData->WorldLocation + LastData->WorldLocation) * 0.5f;
+    }
+
+    // Fallback if only one is valid
+    if (LastData) return LastData->WorldLocation;
+    if (FirstData) return FirstData->WorldLocation;
+
+    return FVector::ZeroVector;
+}
+
+FVector UGridRuntimeStateComponent::GetBottomLocation() const
+{
+    //TODO: Consider if spawn around location instead.
+    
+    // Retrieve static data for both corner tiles
+    const FGridTileStaticData* FirstData = GetStaticTile(FirstTile);
+    
+    if (FirstData) return FirstData->WorldLocation;
+
+    return FVector::ZeroVector;
 }
 
 // ---------------------------------------------------------------------------
 // Runtime State API
 // ---------------------------------------------------------------------------
 
-bool UGridRuntimeStateComponent::AddTileState(const FIntPoint& Coord, EGridTileStateType StateType)
+void UGridRuntimeStateComponent::RegisterTacticalMesh(FGameplayTag ModifierTag, UInstancedStaticMeshComponent* Mesh)
+{
+    if (ModifierTag.IsValid() && Mesh)
+    {
+        TacticalModifiersMeshes.Add(ModifierTag, Mesh);
+    }
+}
+
+UInstancedStaticMeshComponent* UGridRuntimeStateComponent::SelectTacticMeshWithTag(FGameplayTag ModifierTag) const
+{
+    if (const TObjectPtr<UInstancedStaticMeshComponent>* FoundMesh = TacticalModifiersMeshes.Find(ModifierTag))
+    {
+        return FoundMesh->Get();
+    }
+    return nullptr;
+}
+
+void UGridRuntimeStateComponent::AddTacticalModifierPosition(const FGridCoord& Coord, FGameplayTag ModifierTag)
+{
+    if (ModifierTag.IsValid())
+    {
+        TacticalModifiersPositions.Add(Coord, ModifierTag);
+    }
+}
+
+void UGridRuntimeStateComponent::RemoveTacticalModifierPosition(const FGridCoord& Coord)
+{
+    TacticalModifiersPositions.Remove(Coord);
+}
+
+bool UGridRuntimeStateComponent::GetTileModifier(const FGridCoord& Coord, FGameplayTag& OutModifier) const
+{
+    if (const FGameplayTag* FoundTag = TacticalModifiersPositions.Find(Coord))
+    {
+        OutModifier = *FoundTag;
+        return true;
+    }
+    OutModifier = FGameplayTag::EmptyTag;
+    return false;
+}
+
+void UGridRuntimeStateComponent::ClearTacticalData()
+{
+    TacticalModifiersPositions.Empty();
+    // We don't want to clear the TacticalModifiersMeshes map because it's populated in BeginPlay.
+    // Instead, we clear all instances from all registered meshes.
+    for (auto& Pair : TacticalModifiersMeshes)
+    {
+        if (Pair.Value)
+        {
+            Pair.Value->ClearInstances();
+        }
+    }
+}
+
+bool UGridRuntimeStateComponent::IsTileTypeWalkable(const FGameplayTagContainer TileTags) const
+{
+    if (TileTags.IsEmpty()) return false;    
+    
+    return TileTags.HasTagExact(FGameplayTag::RequestGameplayTag("Grid.Type.Walkable"));
+}
+
+bool UGridRuntimeStateComponent::AddTileState(const FGridCoord& Coord, EGridTileStateType StateType)
 {
     if (!HasTile(Coord)) return false;
 
@@ -198,7 +261,7 @@ bool UGridRuntimeStateComponent::AddTileState(const FIntPoint& Coord, EGridTileS
     return true;
 }
 
-bool UGridRuntimeStateComponent::RemoveTileState(const FIntPoint& Coord, EGridTileStateType StateType)
+bool UGridRuntimeStateComponent::RemoveTileState(const FGridCoord& Coord, EGridTileStateType StateType)
 {
     if (!HasTile(Coord)) return false;
 
@@ -216,7 +279,7 @@ bool UGridRuntimeStateComponent::RemoveTileState(const FIntPoint& Coord, EGridTi
     default: return false;
     }
 
-    if (TSet<FIntPoint>* Cache = TileStateCache.Find(StateType))
+    if (TSet<FGridCoord>* Cache = TileStateCache.Find(StateType))
     {
         Cache->Remove(Coord);
     }
@@ -231,7 +294,7 @@ bool UGridRuntimeStateComponent::RemoveTileState(const FIntPoint& Coord, EGridTi
     return true;
 }
 
-FGridTileRuntimeState UGridRuntimeStateComponent::GetTileState(const FIntPoint& Coord) const
+FGridTileRuntimeState UGridRuntimeStateComponent::GetTileState(const FGridCoord& Coord) const
 {
     if (const FGridTileRuntimeState* State = TileStates.Find(Coord))
     {
@@ -240,13 +303,13 @@ FGridTileRuntimeState UGridRuntimeStateComponent::GetTileState(const FIntPoint& 
     return FGridTileRuntimeState();
 }
 
-TArray<FIntPoint> UGridRuntimeStateComponent::GetTilesByState(EGridTileStateType StateType) const
+TArray<FGridCoord> UGridRuntimeStateComponent::GetTilesByState(EGridTileStateType StateType) const
 {
-    if (const TSet<FIntPoint>* Cache = TileStateCache.Find(StateType))
+    if (const TSet<FGridCoord>* Cache = TileStateCache.Find(StateType))
     {
         return Cache->Array();
     }
-    return TArray<FIntPoint>();
+    return TArray<FGridCoord>();
 }
 
 void UGridRuntimeStateComponent::ClearAllStates()

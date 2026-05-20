@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GridCoord.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "GridDataComponent.h"
 #include "GridRuntimeStateComponent.h"
@@ -47,6 +48,11 @@ private:
 	// Internal Configuration
 	// -----------------------------------------------------------------------
 
+	
+	UPROPERTY()
+	FVector GridLocation;
+	
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Grid|Config", meta = (AllowPrivateAccess = "true"))
 	float GridVerticalDistance = 1.f;
 
@@ -107,7 +113,11 @@ public:
 	/** Returns tactical mesh according to tag */
 	UFUNCTION(BlueprintCallable, Category = "Grid|Visual")
 	UInstancedStaticMeshComponent* SelectTacticMeshWithTag(FGameplayTag GridModifierTag) const;
-
+	
+	/** Returns modifier on a position */
+	UFUNCTION(BlueprintCallable, Category = "Grid|Visual")
+	bool GetTileModifier(const FGridCoord& Coord, FGameplayTag& OutModifier) const;
+	
 	/** Add an Instanced Mesh */
 	UFUNCTION(BlueprintCallable, Category = "Grid|Visual")
 	void AddInstanceMesh(const FGameplayTagContainer& TileTags, const FTransform& Transform);
@@ -130,7 +140,7 @@ public:
 	                 FGameplayTag& ModifierTag, float& ZScale) const;
 
 	/** Add the Tile on the Grid*/
-	bool AddGridTileInstance(int32 TileIndex, const FTransform& TileTransform, FIntPoint TilePosition, bool bCheckForEquivalents,
+	bool AddGridTileInstance(int32 TileIndex, const FTransform& TileTransform, FGridCoord TilePosition, bool bCheckForEquivalents,
 	                         const FGameplayTagContainer& TileTags, ACombatant_Base* UnitOnTile);
 	static bool CanAddTile(const FGameplayTagContainer& TileTags);
 
@@ -148,41 +158,22 @@ public:
 	
 	/** Get the first tile from the Grid */
 	UFUNCTION(BlueprintCallable, Category = "Grid|Static")
-	FIntPoint GetFirstTile () const;
+	FGridCoord GetFirstTile () const;
     
 	/** Get the last tile from the Grid */
 	UFUNCTION(BlueprintCallable, Category = "Grid|Static")
-	FIntPoint GetLastTile () const;
+	FGridCoord GetLastTile () const;
 	
 	/** Returns true if the Grid is ready for combat*/
 	UFUNCTION(BlueprintCallable, Category = "Grid|Static")
 	bool GetIsReady() const;
 	
 protected:
-	// -----------------------------------------------------------------------
-	// Tile Data
-	// -----------------------------------------------------------------------
 
-	
-	UPROPERTY(BlueprintReadOnly, Category = "Grid|Tile")
-	FIntPoint FirstTile = FIntPoint(TNumericLimits<int32>::Max(), 0);
-	
-	UPROPERTY(BlueprintReadOnly, Category = "Grid|Tile")
-	FIntPoint LastTile = FIntPoint(0, 0);
-			
-		
 	// -----------------------------------------------------------------------
 	// Internal Cache
 	// -----------------------------------------------------------------------
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Grid|Tile")
 	bool bReady;
-	
-private:
-			//Every Tactical variable and functions is used for debug
-	UPROPERTY()
-	TMap<FGameplayTag, TObjectPtr<UInstancedStaticMeshComponent>> TacticalModifiersMeshes;
-	
-	UPROPERTY()
-	TMap<FIntPoint, FGameplayTag> TacticalModifiersPositions;
 };

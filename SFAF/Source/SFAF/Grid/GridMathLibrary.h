@@ -1,0 +1,49 @@
+// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Kismet/BlueprintFunctionLibrary.h"
+#include "GridMathLibrary.generated.h"
+
+/**
+ * 
+ */
+UCLASS()
+class SFAF_API UGridMathLibrary : public UBlueprintFunctionLibrary
+{
+	GENERATED_BODY()
+public:
+	/** 
+	 * Converts hex grid offset coordinates to world space position.
+	 * @param GridCoord The coordinates on the grid.
+	 * @param GridOrigin The world space origin of the grid.
+	 * @param TileSize The size/dimensions of a single tile.
+	 * @param ZCorrection Vertical offset to apply to the final location.
+	 * @return The calculated world space location of the tile center.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Grid")
+	static FVector HexOffsetToWorld(FGridCoord GridCoord, FVector GridOrigin, FVector TileSize, float ZCorrection);
+	
+	/** 
+	 * Given an list, closest position considering costs. Returns its index on the list
+	 * @param Positions List of potential coordinates
+	 * @param StaticTiles Map of grid static data
+	 * @param Target The target coordinate
+	 * @param bConsiderFlying If true, ignores tile costs
+	 * @return The index in the Positions array
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Grid")
+	static int32 FindNearestTileIndex(
+		const TArray<FGridCoord>& Positions,
+		const TMap<FGridCoord, FGridTileStaticData>& StaticTiles,
+		const FGridCoord& Target,
+		bool bConsiderFlying
+	);
+	
+	/** Horizontal spacing multiplier between hex tiles (slight overlap adjustment) */
+	static constexpr float HEX_HORIZONTAL_SPACING = 0.501f;
+	
+	/** Vertical spacing factor for hex grid layout (based on hex geometry ratio) */
+	static constexpr float HEX_VERTICAL_SPACING = 0.866025f * 2.3f;
+};

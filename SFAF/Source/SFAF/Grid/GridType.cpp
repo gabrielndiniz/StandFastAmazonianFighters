@@ -1,10 +1,12 @@
 // � 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel N�bile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
 
 
-#include "Grid/GridType.h"
-#include "Grid/GridTacticalTypes.h"
-#include "Grid/GridModifier.h"
-#include "Kismet/KismetSystemLibrary.h"
+#include "GridType.h"
+#include "GridModifier.h"
+#include "GridCoord.h"
+#include "GridMathLibrary.h"
+#include "GridTacticalTypes.h"
+
 
 // Sets default values
 AGridType::AGridType()
@@ -12,12 +14,12 @@ AGridType::AGridType()
 	// Disable Tick for performance since it's not being used
 	PrimaryActorTick.bCanEverTick = false;
 
+	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+	SetRootComponent(SceneRoot);
+	
 	GridDataComponent = CreateDefaultSubobject<UGridDataComponent>(TEXT("GridDataComponent"));
 	GridRuntimeStateComponent = CreateDefaultSubobject<UGridRuntimeStateComponent>(TEXT("GridRuntimeStateComponent"));
 	
-	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
-	SetRootComponent(SceneRoot);
-
 	GridMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("GridMesh"));
 	GridMesh->SetupAttachment(SceneRoot);
 
@@ -50,6 +52,8 @@ AGridType::AGridType()
 	EnvironmentTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.Blocked")));
 
 	EnvironmentTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Size.Standard")));
+	
+	
 }
 
 // Called when the game starts or when spawned
@@ -57,16 +61,21 @@ void AGridType::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Type.Obstacle"), TacticalObstacleMesh);
-	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Cost.Double"), TacticalDoubleCostMesh);
-	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Cost.Triple"), TacticalTripleCostMesh);
-	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Type.Blocked"), TacticalTripleCostMesh);
-	TacticalModifiersMeshes.Add(FGameplayTag::RequestGameplayTag("Grid.Type.FlyingOnly"), TacticalFlyingOnlyMesh);
+	GridRuntimeStateComponent->RegisterTacticalMesh(FGameplayTag::RequestGameplayTag("Grid.Type.Obstacle"), TacticalObstacleMesh);
+	GridRuntimeStateComponent->RegisterTacticalMesh(FGameplayTag::RequestGameplayTag("Grid.Cost.Double"), TacticalDoubleCostMesh);
+	GridRuntimeStateComponent->RegisterTacticalMesh(FGameplayTag::RequestGameplayTag("Grid.Cost.Triple"), TacticalTripleCostMesh);
+	GridRuntimeStateComponent->RegisterTacticalMesh(FGameplayTag::RequestGameplayTag("Grid.Type.Blocked"), TacticalTripleCostMesh);
+	GridRuntimeStateComponent->RegisterTacticalMesh(FGameplayTag::RequestGameplayTag("Grid.Type.FlyingOnly"), TacticalFlyingOnlyMesh);
 
 	
 	InitializeCollision();
 	
 	ShowTacticalGrid(false);
+	
+	
+	GridLocation = GetActorLocation();
+	
+	
 }
 
 // Called every frame (disabled in constructor for performance)
@@ -87,44 +96,23 @@ void AGridType::InitializeCollision() const
 
 void AGridType::ClearInstancedMeshes() const
 {
-	// Check each mesh individually and clear if not null
+	GridRuntimeStateComponent->ClearTacticalData();
+
+	// Check the base mesh individually and clear if not null
 	if (GridMesh)
 	{
 		GridMesh->ClearInstances();
-	}
-
-	if (TacticalObstacleMesh)
-	{
-		TacticalObstacleMesh->ClearInstances();
-	}
-
-	if (TacticalDoubleCostMesh)
-	{
-		TacticalDoubleCostMesh->ClearInstances();
-	}
-
-	if (TacticalTripleCostMesh)
-	{
-		TacticalTripleCostMesh->ClearInstances();
-	}
-
-	if (TacticalFlyingOnlyMesh)
-	{
-		TacticalFlyingOnlyMesh->ClearInstances();
 	}
 }
 
 UInstancedStaticMeshComponent* AGridType::SelectTacticMeshWithTag(FGameplayTag GridModifierTag) const
 {
-	if (const TObjectPtr<UInstancedStaticMeshComponent>* FoundMesh = TacticalModifiersMeshes.Find(GridModifierTag))
-	{
-		if (*FoundMesh)
-		{
-			return FoundMesh->Get();
-		}
-	}
+	return GridRuntimeStateComponent->SelectTacticMeshWithTag(GridModifierTag);
+}
 
-	return nullptr;
+bool AGridType::GetTileModifier(const FGridCoord& Coord, FGameplayTag& OutModifier) const
+{
+	return GridRuntimeStateComponent->GetTileModifier(Coord, OutModifier);
 }
 
 void AGridType::AddInstanceMesh(const FGameplayTagContainer& TileTags, const FTransform& Transform)
@@ -292,14 +280,14 @@ bool AGridType::TraceGround(FVector& Location, FGameplayTagContainer& TileTags, 
 	return true;
 }
 
-bool AGridType::AddGridTileInstance(int32 TileIndex, const FTransform& TileTransform, FIntPoint TilePosition,
+bool AGridType::AddGridTileInstance(int32 TileIndex, const FTransform& TileTransform, FGridCoord TilePosition,
                                     bool bCheckForEquivalents, const FGameplayTagContainer& TileTags, 
                                     ACombatant_Base* UnitOnTile)
 {	
 	if (!CanAddTile(TileTags)) { return false; }
 	
 	// Register the last position
-	LastTile = TilePosition;
+	GridRuntimeStateComponent->SetLastTile(TilePosition);
 	
 	// Only needed if it is possible to spawn a tile after play has started.
 	if (bCheckForEquivalents)
@@ -312,7 +300,7 @@ bool AGridType::AddGridTileInstance(int32 TileIndex, const FTransform& TileTrans
 	TileStaticData.WorldLocation = TileTransform.GetLocation();
 	TileStaticData.InstanceIndex = TileIndex;
 	TileStaticData.TileTags = TileTags;
-	
+
 	FGridTileOccupancy Occupancy;
 	Occupancy.OccupyingUnit = UnitOnTile;
 	TileStaticData.Occupancy = Occupancy;
@@ -372,13 +360,14 @@ bool AGridType::GenerateGrid(const FVector Location)
 	TacticalFlyingOnlyMesh->SetMaterial(0, TacticalVisualData.PlaneBorderMaterialInstance);
 	
 	// Prepare for grid generation loop
-	const FIntPoint TileCount = GridDataComponent->GetNumberOfTileCount();
+	const FGridCoord TileCount = GridDataComponent->GetNumberOfTileCount();
 	const FVector TileSize = GridDataComponent->GetTileSize();
 	
 	int32 TileIndex = 0;
 	FTransform TileTransform = FTransform::Identity;
-	FIntPoint TilePosition = FIntPoint(0, 0);
+	FGridCoord TilePosition = FGridCoord(0, 0);
 	bool bTileNeeded = false;
+	float ZCorrection = 0.1f;
 	
 	// For Ground Tracing
 	FGameplayTagContainer TileTags = StandardTileTags;
@@ -392,19 +381,18 @@ bool AGridType::GenerateGrid(const FVector Location)
 	{
 		for (int32 y = 0; y < TileCount.Y - 1; ++y)
 		{
-			TilePosition = FIntPoint(x, y);
-			const float XTileLocation = XOffset * x;
+			TilePosition = FGridCoord(x, y);
+			
+			FVector TileLocation;
+			
+			TileLocation = UGridMathLibrary::HexOffsetToWorld(TilePosition, GridLocation, TileSize, ZCorrection);
 
-			// Even/odd row offset for hex staggering
-			const float YTileLocation = YOffset * y + ((x % 2 == 0) ? 0.f : 1.f);
-			
-			
-			
+
 			// These variables are only used if we have to spawn grid after play has started.
 			constexpr bool bCheckForEquivalents = false;
 			ACombatant_Base* UnitOnTile = nullptr;
 
-			FVector TileLocation = Location + TileSize * FVector(XTileLocation, YTileLocation, 0.1f);
+			
 			
 			// TODO: Grid centering logic improvement needed. 
 			// Currently uses bSpawnAroundGivenLocation to decide tracing behavior.
@@ -422,7 +410,7 @@ bool AGridType::GenerateGrid(const FVector Location)
 					if (bGridModifier)
 					{
 						
-						TacticalModifiersPositions.Add(TilePosition, ModifierTag);
+						GridRuntimeStateComponent->AddTacticalModifierPosition(TilePosition, ModifierTag);
 						if (UInstancedStaticMeshComponent* ModMesh = SelectTacticMeshWithTag(ModifierTag))
 						{
 							ModMesh->AddInstance(TileTransform, true);
@@ -453,14 +441,14 @@ bool AGridType::GenerateGrid(const FVector Location)
 				}
 			}
 			
-			if (FirstTile.X == TNumericLimits<int32>::Max() && bTileNeeded)
+			if (GridRuntimeStateComponent->GetFirstTile().X == TNumericLimits<int32>::Max() && bTileNeeded)
 			{
-				FirstTile = TilePosition;
+				GridRuntimeStateComponent->SetFirstTile(TilePosition);
 			}
 		}
 	}
 	
-	if (FirstTile.X == TNumericLimits<int32>::Max())
+	if (GridRuntimeStateComponent->GetFirstTile().X == TNumericLimits<int32>::Max())
 	{
 		return false;
 	}
@@ -488,14 +476,14 @@ void AGridType::DestroyGridTiles()
 	}
 }
 
-FIntPoint AGridType::GetFirstTile() const
+FGridCoord AGridType::GetFirstTile() const
 {
-	return FirstTile;
+	return GridRuntimeStateComponent->GetFirstTile();
 }
 
-FIntPoint AGridType::GetLastTile() const
+FGridCoord AGridType::GetLastTile() const
 {
-	return LastTile;
+	return GridRuntimeStateComponent->GetLastTile();
 }
 
 bool AGridType::GetIsReady() const

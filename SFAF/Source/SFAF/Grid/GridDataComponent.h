@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Grid/GridCoord.h"
 #include "Components/ActorComponent.h"
 #include "GridDataAsset.h"
 #include "GridDataComponent.generated.h"
@@ -50,11 +51,11 @@ public:
 
 	/** Returns the number of tiles on each axis */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
-	FIntPoint GetNumberOfTileCount() const;
+	FGridCoord GetNumberOfTileCount() const;
 
 	/** Sets the number of tiles on each axis */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
-	void SetNumberOfTileCount(FIntPoint NewTileCount);
+	void SetNumberOfTileCount(FGridCoord NewTileCount);
 
 	/** Returns whether the grid spawns centered around the actor location */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
@@ -109,7 +110,7 @@ protected:
 	
 	/** Number of tiles (X, Y) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
-	FIntPoint TileCount;
+	FGridCoord TileCount;
 	
 	/** If true, grid grows in all directions from pivot; if false, grows positively */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")

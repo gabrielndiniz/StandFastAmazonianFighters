@@ -9,6 +9,8 @@
     <file url="file://$PROJECT_DIR$/Source/SFAF/Grid/GridDataAsset.h" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Source/SFAF/Grid/GridDataComponent.cpp" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Source/SFAF/Grid/GridDataComponent.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Source/SFAF/Grid/GridMathLibrary.cpp" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Source/SFAF/Grid/GridMathLibrary.h" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Source/SFAF/Grid/GridTacticalTypes.cpp" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Source/SFAF/Grid/GridTacticalTypes.h" charset="UTF-8" />
   </component>
