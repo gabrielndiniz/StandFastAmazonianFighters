@@ -3,6 +3,7 @@
 
 #include "GridType.h"
 #include "GridModifier.h"
+#include "GridSnapComponent.h"
 #include "GridCoord.h"
 #include "GridMathLibrary.h"
 #include "GridTacticalTypes.h"
@@ -38,23 +39,16 @@ AGridType::AGridType()
 	TacticalVisualTag = FGameplayTag::RequestGameplayTag(TEXT("Grid.Visual.Black"));
 	
 	StandardTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Cost.Simple")));
-
 	StandardTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Visual.Green")));
-
 	StandardTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.Walkable")));
-
 	StandardTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Size.Standard")));
 	
 	EnvironmentTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Cost.Simple")));
-
 	EnvironmentTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Visual.Green")));
-
 	EnvironmentTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.Blocked")));
-
 	EnvironmentTileTags.AddTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Size.Standard")));
-	
-	
 }
+
 
 // Called when the game starts or when spawned
 void AGridType::BeginPlay()
@@ -67,22 +61,16 @@ void AGridType::BeginPlay()
 	GridRuntimeStateComponent->RegisterTacticalMesh(FGameplayTag::RequestGameplayTag("Grid.Type.Blocked"), TacticalTripleCostMesh);
 	GridRuntimeStateComponent->RegisterTacticalMesh(FGameplayTag::RequestGameplayTag("Grid.Type.FlyingOnly"), TacticalFlyingOnlyMesh);
 
-	
 	InitializeCollision();
-	
 	ShowTacticalGrid(false);
 	
-	
 	GridLocation = GetActorLocation();
-	
-	
 }
 
 // Called every frame (disabled in constructor for performance)
 void AGridType::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	// No per-frame updates needed
 }
 
 void AGridType::InitializeCollision() const
@@ -489,5 +477,21 @@ FGridCoord AGridType::GetLastTile() const
 bool AGridType::GetIsReady() const
 {
 	return bReady;
+}
+
+bool AGridType::FindNearestTileFromLocation(const FVector& WorldLocation, FGridCoord& OutCoord,
+	FGridTileStaticData& OutTileData) const
+{
+	if (!GridRuntimeStateComponent)
+	{
+		return false;
+	}
+
+	return UGridMathLibrary::FindNearestTileFromWorldPosition(
+		WorldLocation,
+		GridRuntimeStateComponent->StaticTiles,
+		OutCoord,
+		OutTileData
+	);
 }
 

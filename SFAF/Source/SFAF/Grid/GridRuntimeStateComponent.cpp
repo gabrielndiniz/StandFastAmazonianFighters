@@ -138,7 +138,12 @@ int32 UGridRuntimeStateComponent::GetNearestTileFromTargetPosition(const TArray<
 
 FGameplayTagContainer UGridRuntimeStateComponent::GetTileTags(FGridCoord Target) const
 {
-    return GetStaticTile(Target)->TileTags;
+    if (const FGridTileStaticData* Tile = GetStaticTile(Target))
+    {
+        return Tile->TileTags;
+    }
+
+    return FGameplayTagContainer();
 }
 
 FVector UGridRuntimeStateComponent::GetGridCenterLocation() const

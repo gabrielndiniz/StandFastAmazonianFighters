@@ -122,7 +122,7 @@ protected:
 	
 	/** Scale of each tile mesh */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
-	FVector TileSize;
+	FVector TileSize = FVector(400,350,50);
 	
 	/** Start point for grid generation */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")

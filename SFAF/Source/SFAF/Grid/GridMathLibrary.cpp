@@ -1,88 +1,152 @@
 // © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
 
-
 #include "Grid/GridMathLibrary.h"
-
 #include "GridRuntimeStateComponent.h"
 
-FVector UGridMathLibrary::HexOffsetToWorld(FGridCoord GridCoord, FVector GridOrigin, FVector TileSize,
-                                           float ZCorrection)
+FVector UGridMathLibrary::HexOffsetToWorld(FGridCoord GridCoord, FVector GridOrigin, FVector TileSize, float ZCorrection)
 {
-	float WorldX = GridCoord.X * TileSize.X *	HEX_HORIZONTAL_SPACING;
+    const float WorldX = GridCoord.X * TileSize.X * HEX_HORIZONTAL_SPACING;
+    float WorldY = GridCoord.Y * TileSize.Y * HEX_VERTICAL_SPACING;
 
-	float WorldY = GridCoord.Y * TileSize.Y * HEX_VERTICAL_SPACING;
+    if (GridCoord.X % 2 != 0)
+    {
+        WorldY += TileSize.Y;
+    }
 
-	// Offset odd columns
-	if (GridCoord.X % 2 != 0)
-	{
-		WorldY += TileSize.Y;
-	}
+    float WorldZ = FMath::GridSnap(GridOrigin.Z, TileSize.Z);
+    WorldZ += ZCorrection;
 
-	float WorldZ = FMath::GridSnap(GridOrigin.Z, TileSize.Z);
-
-	WorldZ += ZCorrection;
-
-	return FVector(GridOrigin.X + WorldX,GridOrigin.Y + WorldY,WorldZ);
+    return FVector(GridOrigin.X + WorldX, GridOrigin.Y + WorldY, WorldZ);
 }
 
-int32 UGridMathLibrary::FindNearestTileIndex(const TArray<FGridCoord>& Positions,
-	const TMap<FGridCoord, FGridTileStaticData>& StaticTiles, const FGridCoord& Target, bool bConsiderFlying)
+FVector UGridMathLibrary::HexFindNearestTilePositionOnXYPlane(FVector Position, const FVector TileSize)
 {
-	const FGridTileStaticData* TargetTile =
-		StaticTiles.Find(Target);
+    const FGridCoord Coord = HexWorldToOffsetCoord(Position, FVector::ZeroVector, TileSize);
 
-	if (!TargetTile)
-	{
-		return INDEX_NONE;
-	}
+    return HexOffsetToWorld(Coord, FVector::ZeroVector, TileSize, Position.Z);
+}
 
-	float BestDistance =
-		TNumericLimits<float>::Max();
+FGridCoord UGridMathLibrary::HexWorldToOffsetCoord(
+    const FVector& WorldPos,
+    const FVector& GridOrigin,
+    const FVector& TileSize)
+{
+    const float LocalX = WorldPos.X - GridOrigin.X;
+    const float LocalY = WorldPos.Y - GridOrigin.Y;
 
-	int32 BestIndex = INDEX_NONE;
+    const int32 X = FMath::RoundToInt(LocalX / (TileSize.X * HEX_HORIZONTAL_SPACING));
+    float YBase = LocalY / (TileSize.Y * HEX_VERTICAL_SPACING);
 
-	for (int32 Index = 0; Index < Positions.Num(); ++Index)
-	{
-		const FGridCoord& Coord =
-			Positions[Index];
+    if (X % 2 != 0)
+    {
+        YBase -= 1.0f;
+    }
 
-		const FGridTileStaticData* TileData =
-			StaticTiles.Find(Coord);
+    const int32 Y = FMath::RoundToInt(YBase);
+    return FGridCoord(X, Y);
+}
 
-		if (!TileData)
-		{
-			continue;
-		}
+int32 UGridMathLibrary::FindNearestTileIndex(
+    const TArray<FGridCoord>& Positions,
+    const TMap<FGridCoord, FGridTileStaticData>& StaticTiles,
+    const FGridCoord& Target,
+    bool bConsiderFlying)
+{
+    const FGridTileStaticData* TargetTile = StaticTiles.Find(Target);
+    if (!TargetTile)
+    {
+        return INDEX_NONE;
+    }
 
-		const int32 CostMultiplier =
-			UGridRuntimeStateComponent::GetTilePathCost(
-				bConsiderFlying,
-				TileData->TileTags
-			);
+    float BestDistance = TNumericLimits<float>::Max();
+    int32 BestIndex = INDEX_NONE;
 
-		if (CostMultiplier >= 999 && !bConsiderFlying)
-		{
-			continue;
-		}
+    for (int32 Index = 0; Index < Positions.Num(); ++Index)
+    {
+        const FGridCoord& Coord = Positions[Index];
 
-		float Distance =
-			FVector::Distance(
-				TargetTile->WorldLocation,
-				TileData->WorldLocation
-			);
+        const FGridTileStaticData* TileData = StaticTiles.Find(Coord);
+        if (!TileData)
+        {
+            continue;
+        }
 
-		if (!bConsiderFlying)
-		{
-			Distance *= CostMultiplier;
-		}
+        const int32 CostMultiplier = UGridRuntimeStateComponent::GetTilePathCost(
+            bConsiderFlying,
+            TileData->TileTags
+        );
 
-		if (Distance < BestDistance)
-		{
-			BestDistance = Distance;
-			BestIndex = Index;
-		}
-	}
+        if (CostMultiplier >= 999 && !bConsiderFlying)
+        {
+            continue;
+        }
 
-	return BestIndex;
+        float Distance = FVector::Distance(
+            TargetTile->WorldLocation,
+            TileData->WorldLocation
+        );
 
+        if (!bConsiderFlying)
+        {
+            Distance *= CostMultiplier;
+        }
+
+        if (Distance < BestDistance)
+        {
+            BestDistance = Distance;
+            BestIndex = Index;
+        }
+    }
+
+    return BestIndex;
+}
+
+FVector UGridMathLibrary::HexSnapWorldToGrid(
+    const FVector& WorldPosition,
+    const FVector& GridOrigin,
+    const FVector& TileSize)
+{
+    const FGridCoord Coord =
+        HexWorldToOffsetCoord(
+            WorldPosition,
+            GridOrigin,
+            TileSize
+        );
+
+    return HexOffsetToWorld(
+        Coord,
+        GridOrigin,
+        TileSize,
+        WorldPosition.Z - GridOrigin.Z
+    );
+}
+
+bool UGridMathLibrary::FindNearestTileFromWorldPosition(const FVector& WorldPosition,
+    const TMap<FGridCoord, FGridTileStaticData>& StaticTiles, FGridCoord& OutCoord,
+    FGridTileStaticData& OutTileData)
+{
+    float BestDistanceSq = TNumericLimits<float>::Max();
+
+    bool bFoundTile = false;
+
+    for (const TPair<FGridCoord, FGridTileStaticData>& Pair : StaticTiles)
+    {
+        const float DistanceSq =
+            FVector::DistSquared(
+                WorldPosition,
+                Pair.Value.WorldLocation
+            );
+
+        if (DistanceSq < BestDistanceSq)
+        {
+            BestDistanceSq = DistanceSq;
+
+            OutCoord = Pair.Key;
+            OutTileData = Pair.Value;
+
+            bFoundTile = true;
+        }
+    }
+
+    return bFoundTile;
 }

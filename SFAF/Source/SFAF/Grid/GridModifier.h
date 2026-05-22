@@ -7,6 +7,7 @@
 #include "GridModifierTypes.h"
 #include "GameFramework/Actor.h"
 #include "GridTacticalTypes.h"
+#include "GridSnapComponent.h"
 #include "GridModifier.generated.h"
 
 class UBoxComponent;
@@ -58,8 +59,15 @@ public:
 
 	/** Visual preview of the modifier in the editor */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UStaticMeshComponent> PreviewMesh;	
+	TObjectPtr<UStaticMeshComponent> PreviewMesh;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UGridSnapComponent> GridSnapComponent;
+
+protected:
+	virtual void OnConstruction(const FTransform& Transform) override;
+
+public:
 	// -----------------------------------------------------------------------
 	// Configuration
 	// -----------------------------------------------------------------------
@@ -83,6 +91,10 @@ public:
 	/** How the cost should be applied (Add, Override, etc.) */
 	UPROPERTY(EditAnywhere, Category = "Grid")
 	EGridModifierMode CostMode = EGridModifierMode::Override;
+
+	/** The origin actor for grid snapping operations. */
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="Grid")
+	TObjectPtr<AActor> GridOriginActor;
 
 protected:
 	virtual void BeginPlay() override;

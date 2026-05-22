@@ -2,15 +2,16 @@
 
 
 #include "Grid/GridModifier.h"
+#include "Grid/GridSnapComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GridModifierTypes.h"
+#include "GridType.h"
 
 
-// Sets default values
+// Sets default values for this actor's properties
 AGridModifier::AGridModifier()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
 	Volume = CreateDefaultSubobject<UBoxComponent>(TEXT("Volume"));
@@ -19,8 +20,24 @@ AGridModifier::AGridModifier()
 	PreviewMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PreviewMesh"));
 	PreviewMesh->SetupAttachment(Volume);
 	PreviewMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	GridSnapComponent = CreateDefaultSubobject<UGridSnapComponent>(TEXT("GridSnapComponent"));
 }
 
+void AGridModifier::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	if (!GridSnapComponent || !PreviewMesh)
+	{
+		return;
+	}
+
+	GridSnapComponent->GridOriginActor = Cast<AGridType>(GridOriginActor);
+
+	const FVector Snapped =	GridSnapComponent->GetSnappedLocation(GetActorLocation());
+
+	PreviewMesh->SetRelativeLocation(Snapped - GetActorLocation());
+}
 
 void AGridModifier::SetPreviewVisible(bool bVisible)
 {
@@ -83,13 +100,11 @@ bool AGridModifier::AffectsPosition(const FVector& WorldPos) const
 void AGridModifier::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
 void AGridModifier::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 

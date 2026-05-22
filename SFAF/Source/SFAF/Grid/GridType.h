@@ -42,6 +42,8 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UGridRuntimeStateComponent> GridRuntimeStateComponent;
+
+
 	
 private:
 	// -----------------------------------------------------------------------
@@ -167,6 +169,10 @@ public:
 	/** Returns true if the Grid is ready for combat*/
 	UFUNCTION(BlueprintCallable, Category = "Grid|Static")
 	bool GetIsReady() const;
+
+	/** Finds the nearest registered tile from a world location. */
+	UFUNCTION(BlueprintCallable, Category = "Grid")
+	bool FindNearestTileFromLocation(const FVector& WorldLocation, FGridCoord& OutCoord, FGridTileStaticData& OutTileData) const;
 	
 protected:
 
