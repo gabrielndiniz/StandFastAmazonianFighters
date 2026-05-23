@@ -54,14 +54,14 @@ public:
 	// -----------------------------------------------------------------------
 	
 	/** Collision volume defining the area of effect */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
 	TObjectPtr<UBoxComponent> Volume;
 
 	/** Visual preview of the modifier in the editor */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
 	TObjectPtr<UStaticMeshComponent> PreviewMesh;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
 	TObjectPtr<UGridSnapComponent> GridSnapComponent;
 
 protected:

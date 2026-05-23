@@ -84,10 +84,20 @@ public:
         FGridTileStaticData& OutTileData
     );
     
+    /**
+    * Return true if the number is even.
+    * @param Number is the analyzed number.
+    */
+    UFUNCTION(BlueprintCallable, Category = "Grid")
+    static bool IsItEven(int32 Number);
+    
+    UFUNCTION(BlueprintCallable, Category = "Grid")
+    static bool IsInTheSameLine(FGridCoord Coord1, FGridCoord Coord2);
     
     /** Horizontal spacing multiplier between hex tiles (slight overlap adjustment) */
     static constexpr float HEX_HORIZONTAL_SPACING = 0.501f;
 
     /** Vertical spacing factor for hex grid layout (based on hex geometry ratio) */
     static constexpr float HEX_VERTICAL_SPACING = 0.866025f * 2.3f;
+    
 };

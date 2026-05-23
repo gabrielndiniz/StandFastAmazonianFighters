@@ -8,7 +8,7 @@ FVector UGridMathLibrary::HexOffsetToWorld(FGridCoord GridCoord, FVector GridOri
     const float WorldX = GridCoord.X * TileSize.X * HEX_HORIZONTAL_SPACING;
     float WorldY = GridCoord.Y * TileSize.Y * HEX_VERTICAL_SPACING;
 
-    if (GridCoord.X % 2 != 0)
+    if (!IsItEven(GridCoord.X))
     {
         WorldY += TileSize.Y;
     }
@@ -37,7 +37,7 @@ FGridCoord UGridMathLibrary::HexWorldToOffsetCoord(
     const int32 X = FMath::RoundToInt(LocalX / (TileSize.X * HEX_HORIZONTAL_SPACING));
     float YBase = LocalY / (TileSize.Y * HEX_VERTICAL_SPACING);
 
-    if (X % 2 != 0)
+    if (!IsItEven(X))
     {
         YBase -= 1.0f;
     }
@@ -149,4 +149,23 @@ bool UGridMathLibrary::FindNearestTileFromWorldPosition(const FVector& WorldPosi
     }
 
     return bFoundTile;
+}
+
+bool UGridMathLibrary::IsItEven(int32 Number)
+{
+    return (Number % 2 == 0);
+}
+
+bool UGridMathLibrary::IsInTheSameLine(FGridCoord Coord1, FGridCoord Coord2)
+{
+    if (Coord1.Y == Coord2.Y)
+    {
+        return true;
+    }
+    if (Coord1.X == Coord2.X)
+    {
+        return IsItEven(Coord1.X) == IsItEven(Coord2.X);
+    }
+    
+    return false;
 }

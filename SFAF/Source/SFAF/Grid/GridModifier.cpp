@@ -14,6 +14,12 @@ AGridModifier::AGridModifier()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
+	GridSnapComponent = CreateDefaultSubobject<UGridSnapComponent>(TEXT("GridSnapComponent"));
+	if (GridSnapComponent)
+	{
+		GridSnapComponent->TileSize = FVector(400.f, 350.f, 50.f);
+	}
+	
 	Volume = CreateDefaultSubobject<UBoxComponent>(TEXT("Volume"));
 	SetRootComponent(Volume);
 
@@ -21,21 +27,38 @@ AGridModifier::AGridModifier()
 	PreviewMesh->SetupAttachment(Volume);
 	PreviewMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	GridSnapComponent = CreateDefaultSubobject<UGridSnapComponent>(TEXT("GridSnapComponent"));
 }
 
 void AGridModifier::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-	if (!GridSnapComponent || !PreviewMesh)
+	
+	if (!GridSnapComponent)
 	{
+		if (!GridSnapComponent)
+		{
+			// Try to find the component
+			GridSnapComponent = FindComponentByClass<UGridSnapComponent>();
+		}
+		if (!GridSnapComponent)
+		{
+			// Log error to help debug if not found even so
+			UE_LOG(LogTemp, Error, TEXT("GridModifier %s: GridSnapComponent is null in OnConstruction!"), *GetName());
+			return;
+		}
+	}
+
+	if (!PreviewMesh)
+	{
+		UE_LOG(LogTemp, Error, TEXT("GridModifier %s: PreviewMesh is null in OnConstruction!"), *GetName());
 		return;
 	}
 
+	// Link the grid origin actor to the snap component
 	GridSnapComponent->GridOriginActor = Cast<AGridType>(GridOriginActor);
 
+	// Calculate snapped location and offset the preview mesh accordingly
 	const FVector Snapped =	GridSnapComponent->GetSnappedLocation(GetActorLocation());
-
 	PreviewMesh->SetRelativeLocation(Snapped - GetActorLocation());
 }
 
