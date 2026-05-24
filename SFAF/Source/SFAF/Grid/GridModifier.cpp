@@ -53,6 +53,8 @@ void AGridModifier::OnConstruction(const FTransform& Transform)
 		UE_LOG(LogTemp, Error, TEXT("GridModifier %s: PreviewMesh is null in OnConstruction!"), *GetName());
 		return;
 	}
+	
+	SetPreviewVisible(true);
 
 	// Link the grid origin actor to the snap component
 	GridSnapComponent->GridOriginActor = Cast<AGridType>(GridOriginActor);
@@ -60,6 +62,20 @@ void AGridModifier::OnConstruction(const FTransform& Transform)
 	// Calculate snapped location and offset the preview mesh accordingly
 	const FVector Snapped =	GridSnapComponent->GetSnappedLocation(GetActorLocation());
 	PreviewMesh->SetRelativeLocation(Snapped - GetActorLocation());
+}
+
+// Called when the game starts or when spawned
+void AGridModifier::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	SetPreviewVisible(false);
+}
+
+// Called every frame
+void AGridModifier::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
 }
 
 void AGridModifier::SetPreviewVisible(bool bVisible)
@@ -117,17 +133,5 @@ bool AGridModifier::AffectsPosition(const FVector& WorldPos) const
 	return FMath::Abs(RelativePos.X) <= BoxExtent.X &&
 		   FMath::Abs(RelativePos.Y) <= BoxExtent.Y &&
 		   FMath::Abs(RelativePos.Z) <= BoxExtent.Z;
-}
-
-// Called when the game starts or when spawned
-void AGridModifier::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
-// Called every frame
-void AGridModifier::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 }
 

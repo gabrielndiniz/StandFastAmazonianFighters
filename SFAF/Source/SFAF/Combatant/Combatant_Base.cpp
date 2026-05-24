@@ -4,6 +4,7 @@
 #include "Combatant/Combatant_Base.h"
 #include "AbilitySystemComponent.h"
 #include "AttributeSet.h"
+#include "CombatantComponents/TeamComponent.h"
 
 ACombatant_Base::ACombatant_Base()
 {
@@ -12,29 +13,13 @@ ACombatant_Base::ACombatant_Base()
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+	
+	TeamComponent = CreateDefaultSubobject<UTeamComponent>(TEXT("TeamComponent"));
 }
 
 UAbilitySystemComponent* ACombatant_Base::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
-}
-
-void ACombatant_Base::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
-void ACombatant_Base::PossessedBy(AController* NewController)
-{
-	Super::PossessedBy(NewController);
-	InitAbilityActorInfo();
-	SetOwner(NewController);
-}
-
-void ACombatant_Base::OnRep_PlayerState()
-{
-	Super::OnRep_PlayerState();
-	InitAbilityActorInfo();
 }
 
 void ACombatant_Base::InitAbilityActorInfo()

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/Source/SFAF/Actions/ActionsComponents/BaseActionComponent.cpp" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Source/SFAF/Actions/TacticalActionManager.cpp" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Source/SFAF/Actions/TacticalActionManager.h" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Source/SFAF/Grid/GridCoord.cpp" charset="UTF-8" />
@@ -15,5 +16,7 @@
     <file url="file://$PROJECT_DIR$/Source/SFAF/Grid/GridSnapComponent.h" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Source/SFAF/Grid/GridTacticalTypes.cpp" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Source/SFAF/Grid/GridTacticalTypes.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Source/SFAF/TeamSubsystem.cpp" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Source/SFAF/TeamSubsystem.h" charset="UTF-8" />
   </component>
 </project>

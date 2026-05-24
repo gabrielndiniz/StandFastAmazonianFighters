@@ -158,11 +158,11 @@ bool UGridMathLibrary::IsItEven(int32 Number)
 
 bool UGridMathLibrary::IsInTheSameLine(FGridCoord Coord1, FGridCoord Coord2)
 {
-    if (Coord1.Y == Coord2.Y)
+    if (Coord1.X == Coord2.X)
     {
         return true;
     }
-    if (Coord1.X == Coord2.X)
+    if (Coord1.Y == Coord2.Y)
     {
         return IsItEven(Coord1.X) == IsItEven(Coord2.X);
     }

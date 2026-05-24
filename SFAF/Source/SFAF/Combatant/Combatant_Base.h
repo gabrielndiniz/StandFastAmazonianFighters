@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
 #include "GameplayTagContainer.h"
+#include "CombatantComponents/TeamComponent.h"
 #include "Combatant_Base.generated.h"
 
 class UAbilitySystemComponent;
@@ -39,9 +40,6 @@ public:
 	FGameplayTag GetUnitTypeTag() const { return UnitTypeTag; }
 	
 protected:
-	virtual void BeginPlay() override;
-	virtual void PossessedBy(AController* NewController) override;
-	virtual void OnRep_PlayerState() override;
 
 	/** Initialize GAS actor info */
 	void InitAbilityActorInfo();
@@ -58,6 +56,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combatant|GAS")
 	TObjectPtr<UAttributeSet> AttributeSet;
 
+	/** Component for Team Management */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combatant|Team")
+	TObjectPtr<UTeamComponent> TeamComponent;
+	
 	// -----------------------------------------------------------------------
 	// Data
 	// -----------------------------------------------------------------------
@@ -65,4 +67,6 @@ protected:
 	/** Gameplay tag representing the unit type */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combatant|Unit")
 	FGameplayTag UnitTypeTag;
+	
+	
 };
