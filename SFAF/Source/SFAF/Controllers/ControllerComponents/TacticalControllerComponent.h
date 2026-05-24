@@ -25,15 +25,21 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	// -----------------------------------------------------------------------
+	// Team
+	// -----------------------------------------------------------------------	
+	
+	
 	/** Set Team Number.*/
 	UFUNCTION(BlueprintCallable, Category="Team", meta=(ToolTip="Set Team Number"))
-	void SetTeamNumber(int32 NewTeamNumber);
+	void SetTeamNumber(int32 NewTeamNumber, bool bAdd);
 	
 	/** Return Team Number.*/
 	UFUNCTION(BlueprintCallable, Category="Team", meta=(ToolTip="Set Team Number"))
-	int32 GetTeamNumber();
+	TArray<int32> GetTeamNumber();
 	
 	/** The Team Number of the owner.*/
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Team")
-	int32 TeamNumber = 0;
+	TArray<int32> TeamNumbers;
+	
 };

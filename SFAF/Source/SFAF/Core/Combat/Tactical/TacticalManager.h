@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "TacticalManager.generated.h"
 
+class AGridType;
+
 UCLASS()
 class SFAF_API ATacticalManager : public AActor
 {
@@ -23,8 +25,32 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Root")
+	TObjectPtr<USceneComponent> SceneRoot;
+	
+	
+	/** Visual representation of the selected Tile*/
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
+	TObjectPtr<UInstancedStaticMeshComponent> SelectMesh;
+	
+	// -----------------------------------------------------------------------
+	// Runtime
+	// -----------------------------------------------------------------------
+	
+	UFUNCTION(BlueprintCallable, Category = "Runtime")
+	void SetGrid(AGridType* GridType);
+	
+	UFUNCTION(BlueprintCallable, Category = "Runtime")
+	AGridType* GetGrid();
+	
+	UPROPERTY(BlueprintReadOnly, Category="Runtime")
+	AGridType* Grid;
+	
+	// -----------------------------------------------------------------------
+	// Actions
+	// -----------------------------------------------------------------------
 	/** Current Team*/
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Team")
 	int32 CurrentTeam = 1;
-	
 };

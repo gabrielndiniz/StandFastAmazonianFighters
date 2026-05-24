@@ -87,4 +87,8 @@ protected:
      */
     UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Team")
     TMap<int32, FTeam> TeamRegistry;
+    
+    /** The quantity of teams on the game*/
+    UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Team")
+    int32 TeamQuantity = 0;
 };

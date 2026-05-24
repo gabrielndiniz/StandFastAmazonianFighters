@@ -13,5 +13,4 @@ void ATacticalAIController::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	TacticalControllerComponent->SetTeamNumber(2);
 }

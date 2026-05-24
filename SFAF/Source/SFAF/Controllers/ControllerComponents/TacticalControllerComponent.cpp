@@ -32,13 +32,20 @@ void UTacticalControllerComponent::TickComponent(float DeltaTime, ELevelTick Tic
 	// ...
 }
 
-void UTacticalControllerComponent::SetTeamNumber(int32 NewTeamNumber)
+void UTacticalControllerComponent::SetTeamNumber(int32 NewTeamNumber, bool bAdd)
 {
-	TeamNumber = NewTeamNumber;
+	if (bAdd)
+	{
+		TeamNumbers.Add(NewTeamNumber);
+	}
+	else
+	{
+		TeamNumbers.Remove(NewTeamNumber);
+	}
 }
 
-int32 UTacticalControllerComponent::GetTeamNumber()
+TArray<int32> UTacticalControllerComponent::GetTeamNumber()
 {
-	return TeamNumber;
+	return TeamNumbers;
 }
 

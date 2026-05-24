@@ -2,6 +2,7 @@
 
 
 #include "Core/Combat/Tactical/TacticalComponents/Actions/BaseActionComponent.h"
+#include "Core/Combat/Tactical/TacticalManager.h"
 
 // Sets default values for this component's properties
 UBaseActionComponent::UBaseActionComponent()
@@ -21,6 +22,23 @@ void UBaseActionComponent::BeginPlay()
 
 	// ...
 	
+	TacticalManager = Cast<ATacticalManager>(GetOwner());
+
+	if (TacticalManager)
+	{
+		
+		Grid = TacticalManager->GetGrid();
+
+		if (Grid)
+		{
+			if (Grid->GridRuntimeStateComponent)
+			{
+				bReady = true;
+			}
+			
+		}
+		
+	}
 }
 
 
@@ -30,5 +48,50 @@ void UBaseActionComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
+}
+
+bool UBaseActionComponent::Execute_Implementation(
+	const FGridCoord& InSourceCoord,
+	bool bHasHit,
+	const FGridCoord& InTargetCoord)
+{
+	// -----------------------------------------------------------------------
+	// Validation
+	// -----------------------------------------------------------------------
+
+	if (!bReady)
+	{
+		return false;
+	}
+
+
+	// -----------------------------------------------------------------------
+	// Retrieve Tile Data
+	// -----------------------------------------------------------------------
+
+	const FGridTileStaticData* SourceTile =
+		Grid->GridRuntimeStateComponent->GetStaticTile(InSourceCoord);
+
+	const FGridTileStaticData* TargetTile =
+		Grid->GridRuntimeStateComponent->GetStaticTile(InTargetCoord);
+
+	if (!SourceTile || !TargetTile)
+	{
+		return false;
+	}
+
+	// -----------------------------------------------------------------------
+	// Cache Runtime Data
+	// -----------------------------------------------------------------------
+
+	SourceTileData = *SourceTile;
+	TargetTileData = *TargetTile;
+
+	SourceCoord = InSourceCoord;
+	TargetCoord = InTargetCoord;
+
+	bActionHasHit = bHasHit;
+
+	return true;
 }
 
