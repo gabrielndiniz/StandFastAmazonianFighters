@@ -174,6 +174,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	bool FindNearestTileFromLocation(const FVector& WorldLocation, FGridCoord& OutCoord, FGridTileStaticData& OutTileData) const;
 	
+	/** Get Static Data, this function is not for blueprint. For blueprint, use the GridRuntimeStateComponent*/
+	FGridTileStaticData* GetTileStaticData(FGridCoord Coord);
+	
 protected:
 
 	// -----------------------------------------------------------------------

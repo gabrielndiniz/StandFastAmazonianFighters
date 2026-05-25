@@ -2,7 +2,6 @@
 
 
 #include "Core/Combat/Tactical/TacticalComponents/Actions/BaseActionComponent.h"
-#include "Core/Combat/Tactical/TacticalManager.h"
 
 // Sets default values for this component's properties
 UBaseActionComponent::UBaseActionComponent()
@@ -20,25 +19,8 @@ void UBaseActionComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-	
-	TacticalManager = Cast<ATacticalManager>(GetOwner());
+	// ...	
 
-	if (TacticalManager)
-	{
-		
-		Grid = TacticalManager->GetGrid();
-
-		if (Grid)
-		{
-			if (Grid->GridRuntimeStateComponent)
-			{
-				bReady = true;
-			}
-			
-		}
-		
-	}
 }
 
 

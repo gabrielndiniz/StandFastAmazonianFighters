@@ -1,10 +1,11 @@
 // © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
 
 
-#include "Controllers/ControllerComponents/TacticalControllerComponent.h"
+#include "HoverTile.h"
+
 
 // Sets default values for this component's properties
-UTacticalControllerComponent::UTacticalControllerComponent()
+UHoverTile::UHoverTile()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -15,7 +16,7 @@ UTacticalControllerComponent::UTacticalControllerComponent()
 
 
 // Called when the game starts
-void UTacticalControllerComponent::BeginPlay()
+void UHoverTile::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -25,42 +26,38 @@ void UTacticalControllerComponent::BeginPlay()
 
 
 // Called every frame
-void UTacticalControllerComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UHoverTile::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
 }
 
-FGridCoord UTacticalControllerComponent::GetHoveredTile()
+bool UHoverTile::Execute_Implementation(const FGridCoord& InSourceCoord, bool bHasHit, const FGridCoord& InTargetCoord)
 {
-	return HoveredTile;
+	Super::Execute_Implementation(InSourceCoord, bHasHit, InTargetCoord);
+	
+	SetHoveredTile(InSourceCoord);
+	//Return true if changed the value, false if not. It will consider the before and after.
+	return bChange;
 }
 
-void UTacticalControllerComponent::SetHoveredTile(const FGridCoord Tile)
+void UHoverTile::SetHoveredTile(FGridCoord NewHoveredTile)
 {
-	HoveredTile = Tile;
-}
-
-void UTacticalControllerComponent::SetTeamNumber(int32 NewTeamNumber, bool bAdd)
-{
-	if (bAdd)
+	if (HoveredTile != NewHoveredTile)
 	{
-		TeamNumbers.Add(NewTeamNumber);
+		HoveredTile = NewHoveredTile;
+		HoveredTileData = Grid->GetTileStaticData(NewHoveredTile);
+		bChange = true;
 	}
 	else
 	{
-		TeamNumbers.Remove(NewTeamNumber);
+		bChange = false;
 	}
 }
 
-void UTacticalControllerComponent::SetDebugMode(bool bSet)
+FGridTileStaticData* UHoverTile::GetHoveredTileData() const
 {
-	bDebugMode = bSet;
-}
-
-TArray<int32> UTacticalControllerComponent::GetTeamNumber()
-{
-	return TeamNumbers;
+	return HoveredTileData;
 }
 

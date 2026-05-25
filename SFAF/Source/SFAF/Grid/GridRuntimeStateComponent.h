@@ -36,12 +36,6 @@ struct FGridTileRuntimeState
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
-    bool bHovered = false;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
-    bool bSelected = false;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
     bool bInPath = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")

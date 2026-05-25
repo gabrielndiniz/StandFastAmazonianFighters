@@ -495,3 +495,13 @@ bool AGridType::FindNearestTileFromLocation(const FVector& WorldLocation, FGridC
 	);
 }
 
+FGridTileStaticData* AGridType::GetTileStaticData(FGridCoord Coord)
+{
+	if (!GridRuntimeStateComponent)
+	{
+		FGridTileStaticData* Result = nullptr;
+		return Result;
+	}
+	return GridRuntimeStateComponent->GetMutableStaticTile(Coord);
+}
+

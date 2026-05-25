@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Core/Combat/Tactical/TacticalManager.h"
 #include "Grid/GridType.h"
 #include "BaseActionComponent.generated.h"
 
@@ -38,13 +37,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Action")
 	void SetReady(bool bIsReady) { bReady = bIsReady;};
 	
+	/** Sets the grid for the action */
+	UFUNCTION(BlueprintCallable, Category="Action")
+	void SetGrid(AGridType* GridType) { Grid = GridType;};
+	
 	/** Execute the action */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Action")
 	bool Execute(const FGridCoord& InSourceCoord, bool bHasHit, const FGridCoord& InTargetCoord);
 
 	virtual bool Execute_Implementation(const FGridCoord& InSourceCoord, bool bHasHit, const FGridCoord& InTargetCoord);
-	
-	
+		
 	
 protected:
 	// -----------------------------------------------------------------------
@@ -54,13 +56,7 @@ protected:
 	/** Flag indicating if the action is ready */
 	UPROPERTY(BlueprintReadOnly, Category="Action")
 	bool bReady = false;		
-	
-	UPROPERTY(BlueprintReadOnly, Category="Action")
-	ATacticalManager* TacticalManager;
-	
-	UPROPERTY(BlueprintReadOnly, Category="Action")
-	AGridType* Grid;
-	
+		
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	FGridCoord SourceCoord;
 	
@@ -75,5 +71,12 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	FGridTileStaticData TargetTileData;
+	
+	// -----------------------------------------------------------------------
+	// Dependencies
+	// -----------------------------------------------------------------------
+
+	UPROPERTY(BlueprintReadOnly, Category = "Action")
+	TWeakObjectPtr<AGridType> Grid;
 
 };

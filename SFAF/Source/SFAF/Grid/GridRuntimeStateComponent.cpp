@@ -253,8 +253,6 @@ bool UGridRuntimeStateComponent::AddTileState(const FGridCoord& Coord, EGridTile
 
     switch (StateType)
     {
-    case EGridTileStateType::Hovered:    Current.bHovered     = true; break;
-    case EGridTileStateType::Selected:   Current.bSelected    = true; break;
     case EGridTileStateType::InPath:     Current.bInPath      = true; break;
     case EGridTileStateType::Neighbor:   Current.bIsNeighbor  = true; break;
     case EGridTileStateType::Discovered: Current.bIsDiscovered = true; break;
@@ -275,8 +273,6 @@ bool UGridRuntimeStateComponent::RemoveTileState(const FGridCoord& Coord, EGridT
 
     switch (StateType)
     {
-    case EGridTileStateType::Hovered:    Current->bHovered     = false; break;
-    case EGridTileStateType::Selected:   Current->bSelected    = false; break;
     case EGridTileStateType::InPath:     Current->bInPath      = false; break;
     case EGridTileStateType::Neighbor:   Current->bIsNeighbor  = false; break;
     case EGridTileStateType::Discovered: Current->bIsDiscovered = false; break;
@@ -290,8 +286,7 @@ bool UGridRuntimeStateComponent::RemoveTileState(const FGridCoord& Coord, EGridT
     }
 
     // Remove entrada vazia do TileStates
-    if (!Current->bHovered && !Current->bSelected  && !Current->bInPath &&
-        !Current->bIsNeighbor && !Current->bIsDiscovered && !Current->bIsAnalyzed)
+    if (!Current->bInPath && !Current->bIsNeighbor && !Current->bIsDiscovered && !Current->bIsAnalyzed)
     {
         TileStates.Remove(Coord);
     }

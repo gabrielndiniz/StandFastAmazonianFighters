@@ -3,10 +3,30 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Controllers/TacticalAIController.h"
+#include "Controllers/TacticalPlayerController.h"
+#include "Controllers/ControllerComponents/TacticalControllerComponent.h"
 #include "GameFramework/Actor.h"
+#include "TacticalComponents/Actions/BaseActionComponent.h"
+#include "TacticalComponents/Actions/Interface/HoverTile.h"
 #include "TacticalManager.generated.h"
 
 class AGridType;
+/** Team Struct*/
+USTRUCT(BlueprintType)
+struct FControllers
+{
+	GENERATED_BODY()
+	
+	bool bIsPlayer = false;
+	
+	ATacticalPlayerController* PlayerController = nullptr;
+	
+	ATacticalAIController* AIController = nullptr;
+	
+	UTacticalControllerComponent* ControllerComponent = nullptr;
+};
+
 
 UCLASS()
 class SFAF_API ATacticalManager : public AActor
@@ -16,10 +36,12 @@ class SFAF_API ATacticalManager : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ATacticalManager();
+	void Initiate();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	void ExecuteHoveredTile();
 
 public:	
 	// Called every frame
@@ -29,6 +51,13 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Root")
 	TObjectPtr<USceneComponent> SceneRoot;
 	
+	// -----------------------------------------------------------------------
+	// Meshes
+	// -----------------------------------------------------------------------
+	
+	/** Visual representation of the Hovered Tile*/
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
+	TObjectPtr<UInstancedStaticMeshComponent> HoverMesh;
 	
 	/** Visual representation of the selected Tile*/
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
@@ -46,10 +75,34 @@ public:
 	
 	UPROPERTY(BlueprintReadOnly, Category="Runtime")
 	AGridType* Grid;
+		
+	// -----------------------------------------------------------------------
+	// Actions - Components
+	// -----------------------------------------------------------------------
+	
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	void SetDebugController (ATacticalPlayerController* Controller);
+		
+	UPROPERTY()
+	TMap<int32,FControllers> TeamsControllers;
+		
+	UPROPERTY()
+	FControllers DebugController;
+	
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
+	TObjectPtr<UHoverTile> HoverTile;		
+	
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
+	bool bDebug = false;
 	
 	// -----------------------------------------------------------------------
-	// Actions
+	// Actions - Functions
 	// -----------------------------------------------------------------------
+		
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	bool GetCurrentTeam(FControllers& OutControllers) const;
+	TArray<FControllers> GetAllTeams() const;
+
 	/** Current Team*/
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Team")
 	int32 CurrentTeam = 1;
