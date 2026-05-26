@@ -66,14 +66,49 @@ bool UBaseActionComponent::Execute_Implementation(
 	// Cache Runtime Data
 	// -----------------------------------------------------------------------
 
-	SourceTileData = *SourceTile;
-	TargetTileData = *TargetTile;
+	if (SourceCoord != InSourceCoord || TargetCoord != InTargetCoord)
+	{
+		SourceCoord = InSourceCoord;
+		TargetCoord = InTargetCoord;
+		
+		SourceTileData = *SourceTile;
+		TargetTileData = *TargetTile;
 
-	SourceCoord = InSourceCoord;
-	TargetCoord = InTargetCoord;
+		bActionHasHit = bHasHit;
+		SetLocationsForMeshes();
+		return true;
+	}
+	return false;
+}
 
-	bActionHasHit = bHasHit;
+FGridTileStaticData UBaseActionComponent::GetTileData(const bool bIsTarget)
+{
+	if (bIsTarget)
+	{
+		return TargetTileData;
+	}
+	else
+	{
+		return SourceTileData;
+	}
+}
 
-	return true;
+bool UBaseActionComponent::SetLocationsForMeshes_Implementation()
+{
+	LocationsForMeshes.Empty();
+	
+	LocationsForMeshes.Add(SourceTileData.WorldLocation);
+	
+	if (SourceTileData.WorldLocation != TargetTileData.WorldLocation)
+	{
+		LocationsForMeshes.Add(TargetTileData.WorldLocation);
+	}	
+	
+	return !LocationsForMeshes.IsEmpty();
+}
+
+TArray<FVector> UBaseActionComponent::GetLocationsForMeshes()
+{
+	return LocationsForMeshes;
 }
 

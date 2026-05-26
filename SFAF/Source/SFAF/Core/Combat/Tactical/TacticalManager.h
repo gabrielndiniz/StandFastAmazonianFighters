@@ -9,6 +9,8 @@
 #include "GameFramework/Actor.h"
 #include "TacticalComponents/Actions/BaseActionComponent.h"
 #include "TacticalComponents/Actions/Interface/HoverTile.h"
+#include "TacticalComponents/Actions/Interface/SelectTile.h"
+#include "TacticalComponents/Actions/Interface/TargetTile.h"
 #include "TacticalManager.generated.h"
 
 class AGridType;
@@ -36,13 +38,12 @@ class SFAF_API ATacticalManager : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ATacticalManager();
-	void Initiate();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	void ExecuteHoveredTile();
-
+	
+	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -62,10 +63,16 @@ public:
 	/** Visual representation of the selected Tile*/
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	TObjectPtr<UInstancedStaticMeshComponent> SelectMesh;
+		
+	/** Visual representation of the selected Tile*/
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
+	TObjectPtr<UInstancedStaticMeshComponent> TargetMesh;
 	
 	// -----------------------------------------------------------------------
 	// Runtime
 	// -----------------------------------------------------------------------
+	
+	void Initiate();
 	
 	UFUNCTION(BlueprintCallable, Category = "Runtime")
 	void SetGrid(AGridType* GridType);
@@ -80,6 +87,7 @@ public:
 	// Actions - Components
 	// -----------------------------------------------------------------------
 	
+	
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void SetDebugController (ATacticalPlayerController* Controller);
 		
@@ -89,15 +97,28 @@ public:
 	UPROPERTY()
 	FControllers DebugController;
 	
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
-	TObjectPtr<UHoverTile> HoverTile;		
 	
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	bool bDebug = false;
 	
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
+	UHoverTile* HoverTile;
+	
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
+	USelectTile* SelectTile;
+	
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
+	UTargetTile* TargetTile;
+	
+	UPROPERTY()
+	TMap<UBaseActionComponent*, UInstancedStaticMeshComponent*> ComponentMesh;
+	
 	// -----------------------------------------------------------------------
 	// Actions - Functions
 	// -----------------------------------------------------------------------
+	
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	void ExecuteAction(UBaseActionComponent* ActionComponent);	
 		
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	bool GetCurrentTeam(FControllers& OutControllers) const;

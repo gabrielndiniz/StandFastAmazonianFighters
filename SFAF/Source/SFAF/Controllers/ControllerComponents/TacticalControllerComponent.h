@@ -28,17 +28,17 @@ public:
 	// -----------------------------------------------------------------------
 	// Action related
 	// -----------------------------------------------------------------------	
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	bool AddCoordToComponent(FGridCoord Coord, FName Component, bool bIsTarget) ;
+		
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	bool GetCoordToComponent(FGridCoord& Coord, FName Component, bool bIsTarget);
+
+	UPROPERTY()
+	TMap<FName, FGridCoord> InSourceOfEachComponent;
 	
-	/** Set the tile under the cursor or to be considered */
-	UFUNCTION(BlueprintCallable, Category="Action", meta=(ToolTip="Set tile under cursor or to be considered"))
-	FGridCoord GetHoveredTile();
-	
-	UFUNCTION(BlueprintCallable, Category="Action", meta=(ToolTip="Set tile under cursor or to be considered"))
-	void SetHoveredTile(FGridCoord Tile);
-	
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Grid|State")
-	FGridCoord HoveredTile;
-	
+	UPROPERTY()
+	TMap<FName, FGridCoord> InTargetOfEachComponent;
 	// -----------------------------------------------------------------------
 	// Team
 	// -----------------------------------------------------------------------	
@@ -59,6 +59,10 @@ public:
 	/** Return Team Number.*/
 	UFUNCTION(BlueprintCallable, Category="Team", meta=(ToolTip="Get Team Numbers"))
 	TArray<int32> GetTeamNumber();
+	
+	/** Return Team Number.*/
+	UFUNCTION(BlueprintCallable, Category="Team", meta=(ToolTip="Get Team Numbers"))
+	bool IsMyTurn();
 	
 	/** The Team Number of the owner.*/
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Team")

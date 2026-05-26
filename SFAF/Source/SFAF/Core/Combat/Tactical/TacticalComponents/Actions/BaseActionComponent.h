@@ -46,6 +46,18 @@ public:
 	bool Execute(const FGridCoord& InSourceCoord, bool bHasHit, const FGridCoord& InTargetCoord);
 
 	virtual bool Execute_Implementation(const FGridCoord& InSourceCoord, bool bHasHit, const FGridCoord& InTargetCoord);
+	
+	/**Get the Data*/
+	FGridTileStaticData GetTileData(bool bIsTarget);
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Action")
+	bool SetLocationsForMeshes();
+
+	virtual bool SetLocationsForMeshes_Implementation();
+	
+	/**Get the Locations for spawn Instanced Meshes*/
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	TArray<FVector> GetLocationsForMeshes();
 		
 	
 protected:
@@ -71,6 +83,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	FGridTileStaticData TargetTileData;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Action")
+	TArray<FVector> LocationsForMeshes;
 	
 	// -----------------------------------------------------------------------
 	// Dependencies

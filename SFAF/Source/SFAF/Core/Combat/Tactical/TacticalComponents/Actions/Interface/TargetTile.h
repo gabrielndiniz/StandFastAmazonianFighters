@@ -4,17 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "Core/Combat/Tactical/TacticalComponents/Actions/BaseActionComponent.h"
-#include "HoverTile.generated.h"
+#include "TargetTile.generated.h"
 
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class SFAF_API UHoverTile : public UBaseActionComponent
+class SFAF_API UTargetTile : public UBaseActionComponent
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this component's properties
-	UHoverTile();
+	UTargetTile();
 
 protected:
 	// Called when the game starts
@@ -24,5 +24,4 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
-	
 };

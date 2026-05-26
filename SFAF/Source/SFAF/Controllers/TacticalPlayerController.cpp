@@ -39,7 +39,71 @@ void ATacticalPlayerController::SetTileUnderCursor() const
 		FGridTileStaticData TileData;
 		if (Grid->FindNearestTileFromLocation(Location, Coord, TileData))
 		{
-			TacticalControllerComponent->SetHoveredTile(Coord);
+			if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("HoverTile"), false))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
+			}
+			if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("HoverTile"), true))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
+			}
 		}
 	}
+}
+
+bool ATacticalPlayerController::SelectTile() const
+{
+	if (!TacticalControllerComponent->GetDebugMode() && !TacticalControllerComponent->IsMyTurn()) {return false;}
+	
+	FGridCoord Coord;
+	if (!TacticalControllerComponent->GetCoordToComponent(Coord, TEXT("HoverTile"), false))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to get coord to component"));
+		return false;
+	}
+	if (!TacticalControllerComponent->GetCoordToComponent(Coord, TEXT("HoverTile"), true))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to get coord to component"));
+		return false;
+	}
+	if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("SelectTile"), false))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
+		return false;
+	}
+	if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("SelectTile"), true))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
+		return false;
+	}
+	return true;
+}
+
+
+bool ATacticalPlayerController::TargetTile() const
+{
+	if (!TacticalControllerComponent->GetDebugMode() && !TacticalControllerComponent->IsMyTurn()) {return false;}
+	
+	FGridCoord Coord;
+	if (!TacticalControllerComponent->GetCoordToComponent(Coord, TEXT("HoverTile"), false))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to get coord to component"));
+		return false;
+	}
+	if (!TacticalControllerComponent->GetCoordToComponent(Coord, TEXT("HoverTile"), true))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to get coord to component"));
+		return false;
+	}
+	if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("TargetTile"), false))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
+		return false;
+	}
+	if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("TargetTile"), true))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
+		return false;
+	}
+	return true;
 }

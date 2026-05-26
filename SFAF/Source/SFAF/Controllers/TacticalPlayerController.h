@@ -35,9 +35,19 @@ public:
 	// -----------------------------------------------------------------------
 	// Data
 	// -----------------------------------------------------------------------
+	
+	UPROPERTY()
 	AGridType* Grid;
 	
 	
+	// -----------------------------------------------------------------------
+	// Action
+	// -----------------------------------------------------------------------
 	void SetTileUnderCursor() const;
 	
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	bool SelectTile() const;
+	
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	bool TargetTile() const;
 };

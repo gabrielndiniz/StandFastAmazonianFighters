@@ -24,14 +24,19 @@ ATacticalManager::ATacticalManager()
 	HoverMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("HoverMesh"));
 	HoverMesh->SetupAttachment(SceneRoot);
 	
-	SelectMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("GridMesh"));
+	SelectMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("SelectMesh"));
 	SelectMesh->SetupAttachment(SceneRoot);
 	
+	TargetMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("TargetMesh"));
+	TargetMesh->SetupAttachment(SceneRoot);
 	
 	//Action Components construct
 	
 	HoverTile = CreateDefaultSubobject<UHoverTile>(TEXT("HoverTile"));
 	
+	SelectTile = CreateDefaultSubobject<USelectTile>(TEXT("SelectTile"));
+	
+	TargetTile = CreateDefaultSubobject<UTargetTile>(TEXT("TargetTile"));
 }
 
 // Called when the game starts or when spawned
@@ -48,7 +53,7 @@ void ATacticalManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-    ExecuteHoveredTile();
+    ExecuteAction(HoverTile);
 
 	
 }
@@ -56,12 +61,24 @@ void ATacticalManager::Tick(float DeltaTime)
 void ATacticalManager::Initiate()
 {
 	SetGrid(Cast<AGridType>(UGameplayStatics::GetActorOfClass(GetWorld(),AGridType::StaticClass())));
-		
-	
+			
 	if (HoverTile && Grid && HoverMesh)
 	{
 		HoverTile->SetGrid(Grid);
 		HoverTile->SetReady(true);
+		ComponentMesh.Add(HoverTile,HoverMesh);
+	}	
+	if (SelectTile && Grid && SelectMesh)
+	{
+		SelectTile->SetGrid(Grid);
+		SelectTile->SetReady(true);
+		ComponentMesh.Add(SelectTile,SelectMesh);
+	}
+	if (TargetTile && Grid && TargetMesh)
+	{
+		TargetTile->SetGrid(Grid);
+		TargetTile->SetReady(true);
+		ComponentMesh.Add(TargetTile,TargetMesh);
 	}
 }
 
@@ -126,14 +143,16 @@ TArray<FControllers> ATacticalManager::GetAllTeams() const
 }
 
 
-void ATacticalManager::ExecuteHoveredTile()
+void ATacticalManager::ExecuteAction(UBaseActionComponent* ActionComponent)
 {
-	if (!HoverTile)
+	if (!ActionComponent)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No HoverTile found."))
+		UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No %s found."),  *GetNameSafe(ActionComponent))
 		return;
 	}
 	bool bChange;
+	FGridCoord SourceCoord;
+	FGridCoord TargetCoord;
 	if (bDebug)
 	{
 		if (!DebugController.PlayerController)
@@ -141,10 +160,18 @@ void ATacticalManager::ExecuteHoveredTile()
 			UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No DebugController found."))
 			return;
 		}
-		bChange = HoverTile->Execute(
-			DebugController.ControllerComponent->GetHoveredTile(),
+		if (!DebugController.ControllerComponent->GetCoordToComponent(SourceCoord, 
+			ActionComponent->GetFName(), false)
+			|| !DebugController.ControllerComponent->GetCoordToComponent(TargetCoord, 
+			ActionComponent->GetFName(), true))
+		{
+			UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No Coords found."))
+			return;
+		}
+		bChange = ActionComponent->Execute(
+			SourceCoord,
 			true,
-			DebugController.ControllerComponent->GetHoveredTile());
+			TargetCoord);
 	}
 	else
 	{
@@ -153,18 +180,38 @@ void ATacticalManager::ExecuteHoveredTile()
 			UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: TeamsControllers is empty."))
 			return;
 		}
-		bChange = HoverTile->Execute(
-			TeamsControllers.Find(CurrentTeam)->ControllerComponent->GetHoveredTile(),
+		if (!TeamsControllers[CurrentTeam].PlayerController && !TeamsControllers[CurrentTeam].AIController)
+		{
+			UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No TeamController found."))
+			return;
+		}
+		if (!TeamsControllers[CurrentTeam].ControllerComponent->GetCoordToComponent(SourceCoord, 
+			ActionComponent->GetFName(), false)
+			|| !TeamsControllers[CurrentTeam].ControllerComponent->GetCoordToComponent(TargetCoord, 
+			ActionComponent->GetFName(), true))
+		{
+			UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No Coords found."))
+			return;
+		}
+		bChange = ActionComponent->Execute(
+			SourceCoord,
 			true,
-			TeamsControllers.Find(CurrentTeam)->ControllerComponent->GetHoveredTile());
+			TargetCoord);
 	}
-	FGridTileStaticData* HoveredData = HoverTile->GetHoveredTileData();
-	FTransform Transform = FTransform::Identity;
+	FGridTileStaticData SourceData = ActionComponent->GetTileData(false);
+	FGridTileStaticData TargetData = ActionComponent->GetTileData(true);
 	if (bChange)
 	{
-		HoverMesh->ClearInstances();
-		Transform.SetLocation(HoveredData->WorldLocation);
-		HoverMesh->AddInstance(Transform,true);
+		UInstancedStaticMeshComponent** MeshPtr  = ComponentMesh.Find(ActionComponent);
+		if (UInstancedStaticMeshComponent* Mesh = *MeshPtr)
+		{			
+			Mesh->ClearInstances();
+			for (const FVector& Location : ActionComponent->GetLocationsForMeshes())
+			{
+				FTransform Transform = FTransform::Identity;
+				Transform.SetLocation(Location);
+				Mesh->AddInstance(Transform,true);
+			}					
+		}
 	}
-
 }

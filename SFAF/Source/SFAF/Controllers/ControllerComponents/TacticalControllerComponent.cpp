@@ -6,7 +6,7 @@
 // Sets default values for this component's properties
 UTacticalControllerComponent::UTacticalControllerComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
+	// Set this component to be initialized when the game starts and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
@@ -32,15 +32,45 @@ void UTacticalControllerComponent::TickComponent(float DeltaTime, ELevelTick Tic
 	// ...
 }
 
-FGridCoord UTacticalControllerComponent::GetHoveredTile()
+bool UTacticalControllerComponent::AddCoordToComponent(const FGridCoord Coord, FName Component,
+                                                       bool bIsTarget) 
 {
-	return HoveredTile;
+	if (bIsTarget)
+	{
+		InTargetOfEachComponent.Add(Component, Coord);
+		return InTargetOfEachComponent.Contains(Component);
+	}
+	else
+	{
+		InSourceOfEachComponent.Add(Component, Coord);
+		return InSourceOfEachComponent.Contains(Component);
+	}
 }
 
-void UTacticalControllerComponent::SetHoveredTile(const FGridCoord Tile)
+bool UTacticalControllerComponent::GetCoordToComponent(FGridCoord& Coord, const FName Component, const bool bIsTarget)
 {
-	HoveredTile = Tile;
+	if (!Component.IsValid()) return false;
+
+	if (bIsTarget)
+	{
+		if (FGridCoord* FoundCoord = InTargetOfEachComponent.Find(Component))
+		{
+			Coord = *FoundCoord; 
+			return true;
+		}
+	}
+	else
+	{
+		if (FGridCoord* FoundCoord = InSourceOfEachComponent.Find(Component))
+		{
+			Coord = *FoundCoord; 
+			return true;
+		}
+	}
+
+	return false;
 }
+
 
 void UTacticalControllerComponent::SetTeamNumber(int32 NewTeamNumber, bool bAdd)
 {
@@ -67,5 +97,10 @@ bool UTacticalControllerComponent::GetDebugMode() const
 TArray<int32> UTacticalControllerComponent::GetTeamNumber()
 {
 	return TeamNumbers;
+}
+
+bool UTacticalControllerComponent::IsMyTurn()
+{
+	return bMyTurn;
 }
 
