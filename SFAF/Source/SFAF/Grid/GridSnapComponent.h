@@ -16,6 +16,8 @@ class SFAF_API UGridSnapComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UGridSnapComponent();
+	
+	virtual void BeginPlay() override;
 
 	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Grid")
 	void SetGrid(AGridType* Grid);

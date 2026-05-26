@@ -59,6 +59,11 @@ void UTacticalControllerComponent::SetDebugMode(bool bSet)
 	bDebugMode = bSet;
 }
 
+bool UTacticalControllerComponent::GetDebugMode() const
+{
+	return bDebugMode;
+}
+
 TArray<int32> UTacticalControllerComponent::GetTeamNumber()
 {
 	return TeamNumbers;

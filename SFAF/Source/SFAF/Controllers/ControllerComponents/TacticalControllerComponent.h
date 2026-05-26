@@ -52,6 +52,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Team", meta=(ToolTip="Set DebugMode"))
 	void SetDebugMode(bool bSet);
 	
+	/** Get debug mode.*/
+	UFUNCTION(BlueprintCallable, Category="Team", meta=(ToolTip="Set DebugMode"))
+	bool GetDebugMode() const;
+	
 	/** Return Team Number.*/
 	UFUNCTION(BlueprintCallable, Category="Team", meta=(ToolTip="Get Team Numbers"))
 	TArray<int32> GetTeamNumber();

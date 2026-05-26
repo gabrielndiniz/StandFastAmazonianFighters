@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Grid/GridType.h"
 #include "TacticalPlayerController.generated.h"
 
 class UTacticalControllerComponent;
@@ -20,10 +21,23 @@ public:
 	ATacticalPlayerController();
 	
 	virtual void BeginPlay() override;
+
+	virtual void Tick(float DeltaSeconds) override;
+	
+	
 	// -----------------------------------------------------------------------
 	// Components
 	// -----------------------------------------------------------------------
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UTacticalControllerComponent> TacticalControllerComponent;
+	
+	// -----------------------------------------------------------------------
+	// Data
+	// -----------------------------------------------------------------------
+	AGridType* Grid;
+	
+	
+	void SetTileUnderCursor() const;
+	
 };

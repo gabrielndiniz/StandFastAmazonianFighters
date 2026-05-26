@@ -4,11 +4,19 @@
 #include "Grid/GridSnapComponent.h"
 #include "Grid/GridType.h"
 #include "Grid/GridMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values for this component's properties
 UGridSnapComponent::UGridSnapComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UGridSnapComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	SetGrid(Cast<AGridType>(UGameplayStatics::GetActorOfClass(GetWorld(),AGridType::StaticClass())));
 }
 
 void UGridSnapComponent::SetGrid(AGridType* Grid)
