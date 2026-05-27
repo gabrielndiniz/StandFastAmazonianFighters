@@ -91,6 +91,17 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static bool IsItEven(int32 Number);
     
+    /**
+    * Finds the neighbors of a tile.
+    * @param Coord Considered coordinate.
+    * @param StaticTiles Map of grid static data.
+    */
+    UFUNCTION(BlueprintCallable, Category = "Grid")
+    static bool GetHexNeighborTiles(
+        const FGridCoord Coord,
+        TArray<FGridCoord>& NeighborsCoords
+    );
+    
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static bool IsInTheSameLine(FGridCoord Coord1, FGridCoord Coord2);
     

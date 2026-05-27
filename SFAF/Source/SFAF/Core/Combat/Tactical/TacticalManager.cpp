@@ -30,6 +30,9 @@ ATacticalManager::ATacticalManager()
 	TargetMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("TargetMesh"));
 	TargetMesh->SetupAttachment(SceneRoot);
 	
+	NeighborMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("NeighborMesh"));
+	NeighborMesh->SetupAttachment(SceneRoot);
+	
 	//Action Components construct
 	
 	HoverTile = CreateDefaultSubobject<UHoverTile>(TEXT("HoverTile"));
@@ -37,6 +40,8 @@ ATacticalManager::ATacticalManager()
 	SelectTile = CreateDefaultSubobject<USelectTile>(TEXT("SelectTile"));
 	
 	TargetTile = CreateDefaultSubobject<UTargetTile>(TEXT("TargetTile"));
+	
+	NeighborTile = CreateDefaultSubobject<UNeighborTile>(TEXT("NeighborTile"));
 }
 
 // Called when the game starts or when spawned
@@ -79,6 +84,13 @@ void ATacticalManager::Initiate()
 		TargetTile->SetGrid(Grid);
 		TargetTile->SetReady(true);
 		ComponentMesh.Add(TargetTile,TargetMesh);
+		if (NeighborTile && Grid && NeighborMesh)
+		{
+			NeighborTile->SetGrid(Grid);
+			NeighborTile->SetReady(true);
+			ComponentMesh.Add(NeighborTile,NeighborMesh);
+			SequencedActions.Add(SelectTile,NeighborTile);
+		}
 	}
 }
 
@@ -190,7 +202,8 @@ void ATacticalManager::ExecuteAction(UBaseActionComponent* ActionComponent)
 			|| !TeamsControllers[CurrentTeam].ControllerComponent->GetCoordToComponent(TargetCoord, 
 			ActionComponent->GetFName(), true))
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No Coords found."))
+			UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No Coords found considering %s."), 
+				*GetNameSafe(ActionComponent))
 			return;
 		}
 		bChange = ActionComponent->Execute(
@@ -214,4 +227,9 @@ void ATacticalManager::ExecuteAction(UBaseActionComponent* ActionComponent)
 			}					
 		}
 	}
+	if (SequencedActions.Contains(ActionComponent))
+	{
+		ExecuteAction(*SequencedActions.Find(ActionComponent));
+	}
+	
 }

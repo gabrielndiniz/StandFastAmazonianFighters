@@ -146,6 +146,27 @@ FGameplayTagContainer UGridRuntimeStateComponent::GetTileTags(FGridCoord Target)
     return FGameplayTagContainer();
 }
 
+bool UGridRuntimeStateComponent::GetTileFlyOnly(const FGridCoord Coord) const
+{
+    if (Coord.X == -1) {return false;}
+    
+    if (const FGridTileStaticData* Tile = GetStaticTile(Coord))
+    {
+        return Tile->TileTags.HasTag(FGameplayTag::RequestGameplayTag("Grid.Type.FlyingOnly"));
+    }
+    return false;
+}
+
+bool UGridRuntimeStateComponent::GetTileCost(const FGridCoord Coord, int32& Cost) const
+{
+    if (const FGridTileStaticData* Tile = GetStaticTile(Coord))
+    {
+        Cost = GetTilePathCost(GetTileFlyOnly(Coord),Tile->TileTags);
+        return true;
+    }
+    return false;
+}
+
 FVector UGridRuntimeStateComponent::GetGridCenterLocation() const
 {
     //TODO: Consider if spawn around location instead.

@@ -9,6 +9,7 @@
 #include "GameFramework/Actor.h"
 #include "TacticalComponents/Actions/BaseActionComponent.h"
 #include "TacticalComponents/Actions/Interface/HoverTile.h"
+#include "TacticalComponents/Actions/Interface/NeighborTile.h"
 #include "TacticalComponents/Actions/Interface/SelectTile.h"
 #include "TacticalComponents/Actions/Interface/TargetTile.h"
 #include "TacticalManager.generated.h"
@@ -68,6 +69,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	TObjectPtr<UInstancedStaticMeshComponent> TargetMesh;
 	
+	/** Visual representation of the selected Tile*/
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
+	TObjectPtr<UInstancedStaticMeshComponent> NeighborMesh;
+	
 	// -----------------------------------------------------------------------
 	// Runtime
 	// -----------------------------------------------------------------------
@@ -110,8 +115,20 @@ public:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UTargetTile* TargetTile;
 	
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
+	UNeighborTile* NeighborTile;
+	
+	/** Mapping the Actions with their Static Meshes*/
 	UPROPERTY()
-	TMap<UBaseActionComponent*, UInstancedStaticMeshComponent*> ComponentMesh;
+	TMap<UBaseActionComponent*, UInstancedStaticMeshComponent*> ComponentMesh;	
+	
+	/** Current Team*/
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Team")
+	int32 CurrentTeam = 1;
+	
+	/** Mapping the Actions with sequences*/
+	UPROPERTY()
+	TMap<UBaseActionComponent*, UBaseActionComponent*> SequencedActions;
 	
 	// -----------------------------------------------------------------------
 	// Actions - Functions
@@ -124,7 +141,4 @@ public:
 	bool GetCurrentTeam(FControllers& OutControllers) const;
 	TArray<FControllers> GetAllTeams() const;
 
-	/** Current Team*/
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Team")
-	int32 CurrentTeam = 1;
 };

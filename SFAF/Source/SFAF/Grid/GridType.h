@@ -6,9 +6,9 @@
 #include "GridCoord.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "GridDataComponent.h"
+#include "GridPathfindingComponent.h"
 #include "GridRuntimeStateComponent.h"
 #include "GameFramework/Actor.h"
-#include "GridTacticalTypes.h"
 #include "GridType.generated.h"
 
 // ---------------------------------------------------------------------------
@@ -43,6 +43,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UGridRuntimeStateComponent> GridRuntimeStateComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UGridPathfindingComponent> GridPathFindingComponent;
 
 	
 private:
@@ -176,6 +178,14 @@ public:
 	
 	/** Get Static Data, this function is not for blueprint. For blueprint, use the GridRuntimeStateComponent*/
 	FGridTileStaticData* GetTileStaticData(FGridCoord Coord);
+	
+	/** Get Tile Cost*/
+	UFUNCTION(BlueprintCallable, Category = "Grid")
+	int32 GetTileCost(FGridCoord Coord);
+		
+	/** Get Tile Cost*/
+	UFUNCTION(BlueprintCallable, Category = "Grid")
+	bool GetNeighbors(FGridCoord Coord, TArray<FGridCoord>& Neighbors);
 	
 protected:
 

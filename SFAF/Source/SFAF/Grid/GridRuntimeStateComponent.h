@@ -157,6 +157,11 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     FGameplayTagContainer GetTileTags (FGridCoord Target) const;
     
+    /** Return true if Coord is fly only */
+    UFUNCTION(BlueprintCallable, Category = "Grid|Static")
+    bool GetTileFlyOnly (FGridCoord Coord) const;
+    bool GetTileCost(FGridCoord Coord, int32& Cost) const;
+
     /** Give the center location of the Grid */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     FVector GetGridCenterLocation () const;

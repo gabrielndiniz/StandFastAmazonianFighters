@@ -20,6 +20,7 @@ AGridType::AGridType()
 	
 	GridDataComponent = CreateDefaultSubobject<UGridDataComponent>(TEXT("GridDataComponent"));
 	GridRuntimeStateComponent = CreateDefaultSubobject<UGridRuntimeStateComponent>(TEXT("GridRuntimeStateComponent"));
+	GridPathFindingComponent = CreateDefaultSubobject<UGridPathfindingComponent>(TEXT("GridPathFindingComponent"));
 	
 	GridMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("GridMesh"));
 	GridMesh->SetupAttachment(SceneRoot);
@@ -503,5 +504,27 @@ FGridTileStaticData* AGridType::GetTileStaticData(FGridCoord Coord)
 		return Result;
 	}
 	return GridRuntimeStateComponent->GetMutableStaticTile(Coord);
+}
+
+int32 AGridType::GetTileCost(FGridCoord Coord)
+{
+	if (!GridRuntimeStateComponent)
+	{
+		return 999;
+	}
+	if (FGridTileStaticData* TileDataPtr = GetTileStaticData(Coord))
+	{
+		return GridRuntimeStateComponent->GetTilePathCost(
+			TileDataPtr->TileTags.HasTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.FlyingOnly"))),
+			TileDataPtr->TileTags);
+	}
+	return 999;
+}
+
+bool AGridType::GetNeighbors(FGridCoord Coord, TArray<FGridCoord>& Neighbors)
+{
+	if (!GridRuntimeStateComponent || !GridPathFindingComponent) { return false; }
+	
+	return GridPathFindingComponent->GetNeighborsCoords(Coord, Neighbors, GridRuntimeStateComponent);
 }
 

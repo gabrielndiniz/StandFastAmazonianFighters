@@ -156,6 +156,50 @@ bool UGridMathLibrary::IsItEven(int32 Number)
     return (Number % 2 == 0);
 }
 
+bool UGridMathLibrary::GetHexNeighborTiles(const FGridCoord Coord,
+    TArray<FGridCoord>& NeighborsCoords)
+{
+    NeighborsCoords.Empty();
+    
+    FGridCoord Result;
+    int32 i = 0;
+    int32 j = 0;
+    //Same collum first
+    for (i = 0 ; i <= 1 ; ++i)
+    {                 
+        Result.X=i*4-2+Coord.X;
+        Result.Y=Coord.Y;
+        NeighborsCoords.Add(Result);        
+    }
+    
+    if (IsItEven(Coord.X))
+    {
+        for (i = 0 ; i <= 1 ; ++i)
+        {
+            Result.X=Coord.X-1+i*2;
+            for (j = 0 ; j <= 1 ; ++j)
+            {
+                Result.Y=Coord.Y-j;
+                NeighborsCoords.Add(Result); 
+            }
+        }
+    }
+    else
+    {
+        for (i = 0 ; i <= 1 ; ++i)
+        {
+            Result.X=Coord.X-1+i*2;
+            for (j = 0 ; j <= 1 ; ++j)
+            {
+                Result.Y=Coord.Y+j;
+                NeighborsCoords.Add(Result); 
+            }
+        }
+    }
+    
+    return !NeighborsCoords.IsEmpty();
+}
+
 bool UGridMathLibrary::IsInTheSameLine(FGridCoord Coord1, FGridCoord Coord2)
 {
     if (Coord1.X == Coord2.X)

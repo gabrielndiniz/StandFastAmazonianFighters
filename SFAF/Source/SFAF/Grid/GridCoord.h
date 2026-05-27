@@ -27,11 +27,11 @@ struct FGridCoord
 
 	/** The X position on the grid. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
-	int32 X = 0;
+	int32 X = -1;
 
 	/** The Y position on the grid. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
-	int32 Y = 0;
+	int32 Y = -1;
 
 	/** Equality operator for FGridCoord. */
 	FORCEINLINE bool operator==(const FGridCoord& Other) const
