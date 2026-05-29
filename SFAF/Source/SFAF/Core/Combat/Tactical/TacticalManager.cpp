@@ -33,6 +33,9 @@ ATacticalManager::ATacticalManager()
 	NeighborMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("NeighborMesh"));
 	NeighborMesh->SetupAttachment(SceneRoot);
 	
+	ReachableMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("ReachableMesh"));
+	ReachableMesh->SetupAttachment(SceneRoot);
+	
 	//Action Components construct
 	
 	HoverTile = CreateDefaultSubobject<UHoverTile>(TEXT("HoverTile"));
@@ -42,6 +45,8 @@ ATacticalManager::ATacticalManager()
 	TargetTile = CreateDefaultSubobject<UTargetTile>(TEXT("TargetTile"));
 	
 	NeighborTile = CreateDefaultSubobject<UNeighborTile>(TEXT("NeighborTile"));
+	
+	ReachableTiles = CreateDefaultSubobject<UReachableTiles>(TEXT("ReachableTiles"));
 }
 
 // Called when the game starts or when spawned
@@ -154,6 +159,11 @@ TArray<FControllers> ATacticalManager::GetAllTeams() const
 	return Result;
 }
 
+void ATacticalManager::SetCurrentMovementPoints(int32 Points)
+{
+	ReachableTiles->SetCurrentMovementPoints(Points);
+}
+
 
 void ATacticalManager::ExecuteAction(UBaseActionComponent* ActionComponent)
 {
@@ -232,4 +242,10 @@ void ATacticalManager::ExecuteAction(UBaseActionComponent* ActionComponent)
 		ExecuteAction(*SequencedActions.Find(ActionComponent));
 	}
 	
+}
+
+void ATacticalManager::SetConsiderFlying(bool bConsider)
+{
+	NeighborTile->SetConsiderFly(bConsider);
+	ReachableTiles->SetConsiderFly(bConsider);
 }

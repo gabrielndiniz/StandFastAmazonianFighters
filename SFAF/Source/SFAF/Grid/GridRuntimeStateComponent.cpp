@@ -306,7 +306,7 @@ bool UGridRuntimeStateComponent::RemoveTileState(const FGridCoord& Coord, EGridT
         Cache->Remove(Coord);
     }
 
-    // Remove entrada vazia do TileStates
+    // Remove empty entry from TileStates
     if (!Current->bInPath && !Current->bIsNeighbor && !Current->bIsDiscovered && !Current->bIsAnalyzed)
     {
         TileStates.Remove(Coord);

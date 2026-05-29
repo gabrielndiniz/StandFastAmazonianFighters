@@ -40,14 +40,13 @@ bool UNeighborTile::SetLocationsForMeshes_Implementation()
 	LocationsForMeshes.Empty();	
 	NeighborsCoords.Empty();
 	
-	//TODO: Consider if unit selected does not have fly
-	bool bFly = true;	
 	
-	Grid->GetNeighbors(SourceCoord, NeighborsCoords);
+	Grid->GetNeighbors(SourceCoord, NeighborsCoords, bConsiderFly);
 
 	for (FGridCoord NeighborCoord : NeighborsCoords)
 	{
 		LocationsForMeshes.Add(Grid->GetTileStaticData(NeighborCoord)->WorldLocation);
+		
 	}
 	
 	return !LocationsForMeshes.IsEmpty();
@@ -56,5 +55,10 @@ bool UNeighborTile::SetLocationsForMeshes_Implementation()
 TArray<FGridCoord> UNeighborTile::GetNeighbors()
 {
 	return NeighborsCoords;
+}
+
+void UNeighborTile::SetConsiderFly(bool bConsider)
+{
+	bConsiderFly = bConsider;
 }
 

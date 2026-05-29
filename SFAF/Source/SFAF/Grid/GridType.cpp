@@ -463,6 +463,10 @@ void AGridType::DestroyGridTiles()
 	{
 		GridRuntimeStateComponent->ClearAllTiles();
 	}
+	if (GridPathFindingComponent)
+	{
+		GridPathFindingComponent->ClearPathfindingCache();
+	}
 }
 
 FGridCoord AGridType::GetFirstTile() const
@@ -521,10 +525,21 @@ int32 AGridType::GetTileCost(FGridCoord Coord)
 	return 999;
 }
 
-bool AGridType::GetNeighbors(FGridCoord Coord, TArray<FGridCoord>& Neighbors)
+bool AGridType::GetNeighbors(FGridCoord Coord, TArray<FGridCoord>& Neighbors, const bool bConsiderFly)
 {
 	if (!GridRuntimeStateComponent || !GridPathFindingComponent) { return false; }
 	
-	return GridPathFindingComponent->GetNeighborsCoords(Coord, Neighbors, GridRuntimeStateComponent);
+	return GridPathFindingComponent->GetNeighborsCoords(Coord, Neighbors, GridRuntimeStateComponent, bConsiderFly);
+}
+
+bool AGridType::GetReachableCoords(FGridCoord Coord, TArray<FGridCoord>& ReachableCoords, int32 MovementPoints)
+{
+	if (!GridRuntimeStateComponent || !GridPathFindingComponent) { return false; }
+	
+	return GridPathFindingComponent->GetAllReachableCoords(
+		Coord, 
+		ReachableCoords, 
+		MovementPoints, 
+		GridRuntimeStateComponent);
 }
 

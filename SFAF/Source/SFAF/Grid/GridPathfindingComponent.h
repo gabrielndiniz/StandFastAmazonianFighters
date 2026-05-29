@@ -21,6 +21,22 @@ struct FTilePathfindData
 	
 };
 
+struct FPathNode
+{
+	FGridCoord Coord;
+	int CostSoFar = 0;
+	int Heuristic = 0;
+	int TotalCost = 0;
+	bool IsClosed = false;
+	TSharedPtr<FPathNode> Parent = nullptr;
+
+	// Comparing for priority queue
+	bool operator<(const FPathNode& Other) const {
+		return TotalCost < Other.TotalCost;
+	
+	}
+};
+	
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SFAF_API UGridPathfindingComponent : public UActorComponent
@@ -41,9 +57,21 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;	
 	
 	/** Get the neighbors*/
-	bool GetNeighborsCoords(FGridCoord Coord, TArray<FGridCoord>& NeighborsCoords, 
-		TObjectPtr<UGridRuntimeStateComponent> RuntimeStateComponent);
+	bool GetNeighborsCoords(FGridCoord Coord, TArray<FGridCoord>& NeighborsCoords,
+	                        TObjectPtr<UGridRuntimeStateComponent> RuntimeStateComponent, bool bIsFlying);
 	
+	UFUNCTION()
+	void ClearPathfindingCache();	
+	
+	/** Get the reachable coords*/
+	bool GetAllReachableCoords(
+		FGridCoord Coord, 
+		TArray<FGridCoord>& ReachableCoords, 
+		const int32 Points, 
+		TObjectPtr<UGridRuntimeStateComponent> RuntimeStateComponent);
+
 	UPROPERTY()
 	TMap<FGridCoord, FTilePathfindData> TilePathfindMap;
+	
+	TMap<FGridCoord, FPathNode> TilesPaths;
 };

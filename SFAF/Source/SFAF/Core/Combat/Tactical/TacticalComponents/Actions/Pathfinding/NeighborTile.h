@@ -27,9 +27,15 @@ public:
 	
 	virtual bool SetLocationsForMeshes_Implementation() override;
 	
-	UFUNCTION(BlueprintCallable, Category="Action", BlueprintPure)
+	UFUNCTION(BlueprintCallable, Category="Action")
 	TArray<FGridCoord> GetNeighbors();
+	
+	UFUNCTION(BlueprintCallable, Category="Action")
+	void SetConsiderFly(bool bConsider);
 	
 	UPROPERTY(BlueprintReadOnly, Category="Action")
 	TArray<FGridCoord> NeighborsCoords;
+	
+	UPROPERTY(BlueprintReadOnly, Category="Action")
+	bool bConsiderFly = true;	
 };

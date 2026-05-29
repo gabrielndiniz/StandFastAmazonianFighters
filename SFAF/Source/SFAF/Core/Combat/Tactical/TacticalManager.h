@@ -9,9 +9,10 @@
 #include "GameFramework/Actor.h"
 #include "TacticalComponents/Actions/BaseActionComponent.h"
 #include "TacticalComponents/Actions/Interface/HoverTile.h"
-#include "TacticalComponents/Actions/Interface/NeighborTile.h"
 #include "TacticalComponents/Actions/Interface/SelectTile.h"
 #include "TacticalComponents/Actions/Interface/TargetTile.h"
+#include "TacticalComponents/Actions/Pathfinding/NeighborTile.h"
+#include "TacticalComponents/Actions/Pathfinding/ReachableTiles.h"
 #include "TacticalManager.generated.h"
 
 class AGridType;
@@ -65,14 +66,17 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	TObjectPtr<UInstancedStaticMeshComponent> SelectMesh;
 		
-	/** Visual representation of the selected Tile*/
+	/** Visual representation of the target Tile*/
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	TObjectPtr<UInstancedStaticMeshComponent> TargetMesh;
 	
-	/** Visual representation of the selected Tile*/
+	/** Visual representation of the neighbor Tiles*/
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	TObjectPtr<UInstancedStaticMeshComponent> NeighborMesh;
 	
+	/** Visual representation of the reachable Tiles*/
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
+	TObjectPtr<UInstancedStaticMeshComponent> ReachableMesh;
 	// -----------------------------------------------------------------------
 	// Runtime
 	// -----------------------------------------------------------------------
@@ -118,6 +122,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UNeighborTile* NeighborTile;
 	
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
+	UReachableTiles* ReachableTiles;
+	
 	/** Mapping the Actions with their Static Meshes*/
 	UPROPERTY()
 	TMap<UBaseActionComponent*, UInstancedStaticMeshComponent*> ComponentMesh;	
@@ -136,9 +143,14 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void ExecuteAction(UBaseActionComponent* ActionComponent);	
+	
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	void SetConsiderFlying(bool bConsider);
 		
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	bool GetCurrentTeam(FControllers& OutControllers) const;
 	TArray<FControllers> GetAllTeams() const;
 
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	void SetCurrentMovementPoints(int32 Points);
 };

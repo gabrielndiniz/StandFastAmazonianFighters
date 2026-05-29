@@ -185,7 +185,11 @@ public:
 		
 	/** Get Tile Cost*/
 	UFUNCTION(BlueprintCallable, Category = "Grid")
-	bool GetNeighbors(FGridCoord Coord, TArray<FGridCoord>& Neighbors);
+	bool GetNeighbors(FGridCoord Coord, TArray<FGridCoord>& Neighbors, bool bConsiderFly);
+	
+	/** Get Path from cost*/
+	UFUNCTION(BlueprintCallable, Category = "Grid")
+	bool GetReachableCoords(FGridCoord Coord, TArray<FGridCoord>& ReachableCoords, int32 MovementPoints);
 	
 protected:
 
