@@ -2,5 +2,6 @@
 
 #pragma once
 
+/** Primary include header for the SFAF module. Includes common Unreal types. */
 #include "CoreMinimal.h"
 

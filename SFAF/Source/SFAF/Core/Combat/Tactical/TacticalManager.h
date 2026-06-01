@@ -16,18 +16,22 @@
 #include "TacticalManager.generated.h"
 
 class AGridType;
-/** Team Struct*/
+/** Bundles references to a team's player controller, AI controller, and tactical component */
 USTRUCT(BlueprintType)
 struct FControllers
 {
 	GENERATED_BODY()
 	
+	/** Whether this team is controlled by a human player */
 	bool bIsPlayer = false;
 	
+	/** Player controller for human-controlled teams */
 	ATacticalPlayerController* PlayerController = nullptr;
 	
+	/** AI controller for AI-controlled teams */
 	ATacticalAIController* AIController = nullptr;
 	
+	/** Shared tactical controller component for action management */
 	UTacticalControllerComponent* ControllerComponent = nullptr;
 };
 
@@ -51,6 +55,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	
+	/** Root scene component for the manager actor */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Root")
 	TObjectPtr<USceneComponent> SceneRoot;
 	
@@ -81,14 +86,18 @@ public:
 	// Runtime
 	// -----------------------------------------------------------------------
 	
+	/** Initializes the tactical manager, creating action components and registering meshes */
 	void Initiate();
 	
+	/** Assigns the grid actor to be managed */
 	UFUNCTION(BlueprintCallable, Category = "Runtime")
 	void SetGrid(AGridType* GridType);
 	
+	/** Returns the currently managed grid actor */
 	UFUNCTION(BlueprintCallable, Category = "Runtime")
 	AGridType* GetGrid();
 	
+	/** Reference to the active grid actor */
 	UPROPERTY(BlueprintReadOnly, Category="Runtime")
 	AGridType* Grid;
 		
@@ -97,31 +106,40 @@ public:
 	// -----------------------------------------------------------------------
 	
 	
+	/** Sets a specific controller as the debug controller for testing */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void SetDebugController (ATacticalPlayerController* Controller);
 		
+	/** Maps team numbers to their controller bundles */
 	UPROPERTY()
 	TMap<int32,FControllers> TeamsControllers;
 		
+	/** Controller bundle used for debug/testing purposes */
 	UPROPERTY()
 	FControllers DebugController;
 	
 	
+	/** Enables debug mode for the tactical manager */
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	bool bDebug = false;
 	
+	/** Component handling hover tile visuals and logic */
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UHoverTile* HoverTile;
 	
+	/** Component handling tile selection visuals and logic */
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	USelectTile* SelectTile;
 	
+	/** Component handling target tile visuals and logic */
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UTargetTile* TargetTile;
 	
+	/** Component handling neighbor tile discovery */
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UNeighborTile* NeighborTile;
 	
+	/** Component handling reachable tile calculations */
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UReachableTiles* ReachableTiles;
 	
@@ -141,16 +159,22 @@ public:
 	// Actions - Functions
 	// -----------------------------------------------------------------------
 	
+	/** Executes a given action component on the currently active team */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void ExecuteAction(UBaseActionComponent* ActionComponent);	
 	
+	/** Sets whether flying movement is considered for all pathfinding actions */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void SetConsiderFlying(bool bConsider);
 		
+	/** Returns the controller data for the currently active team */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	bool GetCurrentTeam(FControllers& OutControllers) const;
+	
+	/** Returns controller data for all registered teams */
 	TArray<FControllers> GetAllTeams() const;
 
+	/** Updates the current movement points for reachability calculations */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void SetCurrentMovementPoints(int32 Points);
 };

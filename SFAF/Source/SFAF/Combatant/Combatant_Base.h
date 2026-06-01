@@ -41,7 +41,7 @@ public:
 	
 protected:
 
-	/** Initialize GAS actor info */
+	/** Initializes the Ability System Component's actor info for this combatant */
 	void InitAbilityActorInfo();
 
 	// -----------------------------------------------------------------------

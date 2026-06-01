@@ -69,21 +69,27 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category="Action")
 	bool bReady = false;		
 		
+	/** Source grid coordinate for the action */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	FGridCoord SourceCoord;
 	
+	/** Target grid coordinate for the action */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	FGridCoord TargetCoord;
 	
+	/** Whether the action's hit condition was satisfied */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	bool bActionHasHit = false;
 	
+	/** Static tile data for the source tile */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	FGridTileStaticData SourceTileData;
 
+	/** Static tile data for the target tile */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	FGridTileStaticData TargetTileData;
 	
+	/** World-space positions where visual mesh instances are placed */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	TArray<FVector> LocationsForMeshes;
 	
@@ -91,6 +97,7 @@ protected:
 	// Dependencies
 	// -----------------------------------------------------------------------
 
+	/** Weak pointer to the grid actor this action operates on */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	TWeakObjectPtr<AGridType> Grid;
 

@@ -25,7 +25,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 	
-		
+	/** Tracks whether the selected state has changed since the last evaluation */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	bool bChange = true;
 };

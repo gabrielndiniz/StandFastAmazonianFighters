@@ -28,15 +28,19 @@ public:
 	// -----------------------------------------------------------------------
 	// Action related
 	// -----------------------------------------------------------------------	
+	/** Stores a source or target coordinate for a named action component */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	bool AddCoordToComponent(FGridCoord Coord, FName Component, bool bIsTarget) ;
 		
+	/** Retrieves a stored source or target coordinate for a named action component */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	bool GetCoordToComponent(FGridCoord& Coord, FName Component, bool bIsTarget);
 
+	/** Maps action component names to their source grid coordinates */
 	UPROPERTY()
 	TMap<FName, FGridCoord> InSourceOfEachComponent;
 	
+	/** Maps action component names to their target grid coordinates */
 	UPROPERTY()
 	TMap<FName, FGridCoord> InTargetOfEachComponent;
 	// -----------------------------------------------------------------------
@@ -64,15 +68,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Team", meta=(ToolTip="Get Team Numbers"))
 	bool IsMyTurn();
 	
-	/** The Team Number of the owner.*/
+	/** The team numbers assigned to the owner of this component */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Team")
 	TArray<int32> TeamNumbers;
 	
-	/** This will be used for debug purpose*/
+	/** Enables debug logging and visualization for this controller */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Team")
 	bool bDebugMode = false;
 	
-	/** This will be used for debug purpose*/
+	/** Flag indicating whether it is currently this controller's turn */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Team")
 	bool bMyTurn = false;
 	

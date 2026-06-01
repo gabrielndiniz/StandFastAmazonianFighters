@@ -12,6 +12,7 @@ class UTacticalControllerComponent;
 /**
  * 
  */
+/** Player controller for tactical combat. Handles grid interaction and input-driven actions. */
 UCLASS()
 class SFAF_API ATacticalPlayerController : public APlayerController
 {
@@ -29,6 +30,7 @@ public:
 	// Components
 	// -----------------------------------------------------------------------
 
+	/** Component managing tactical actions (select, hover, target, pathfinding) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UTacticalControllerComponent> TacticalControllerComponent;
 	
@@ -36,6 +38,7 @@ public:
 	// Data
 	// -----------------------------------------------------------------------
 	
+	/** Reference to the active grid actor */
 	UPROPERTY()
 	AGridType* Grid;
 	
@@ -43,11 +46,14 @@ public:
 	// -----------------------------------------------------------------------
 	// Action
 	// -----------------------------------------------------------------------
+	/** Calculates which tile is currently under the mouse cursor and pushes it to the tactical component */
 	void SetTileUnderCursor() const;
 	
+	/** Handles tile selection logic, returns true if a valid tile was selected */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	bool SelectTile() const;
 	
+	/** Handles target confirmation on the currently selected tile */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	bool TargetTile() const;
 };

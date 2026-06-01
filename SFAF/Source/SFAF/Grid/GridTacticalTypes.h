@@ -4,22 +4,18 @@
 
 #include "CoreMinimal.h"
 
-/**
- * 
- */
+/** Enumeration of tactical modifier types that affect tile movement costs */
 UENUM(BlueprintType)
 enum class EGridTacticalChannel : uint8
 {
-    None,
-    Obstacle,
-    DoubleCost,
-    TripleCost,
-    FlyingOnly
-};
-
-class SFAF_API GridTacticalTypes
-{
-public:
-	GridTacticalTypes();
-	~GridTacticalTypes();
+	/** No tactical modifier */
+	None,
+	/** Tile is blocked / impassable */
+	Obstacle,
+	/** Tile costs 2 movement points to enter */
+	DoubleCost,
+	/** Tile costs 3 movement points to enter */
+	TripleCost,
+	/** Only flying units can occupy this tile */
+	FlyingOnly
 };

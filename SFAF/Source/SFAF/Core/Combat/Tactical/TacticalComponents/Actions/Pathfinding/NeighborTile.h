@@ -27,15 +27,19 @@ public:
 	
 	virtual bool SetLocationsForMeshes_Implementation() override;
 	
+	/** Returns the list of neighbor coordinates computed by this component */
 	UFUNCTION(BlueprintCallable, Category="Action")
 	TArray<FGridCoord> GetNeighbors();
 	
+	/** Sets whether flying movement is considered when computing neighbors */
 	UFUNCTION(BlueprintCallable, Category="Action")
 	void SetConsiderFly(bool bConsider);
 	
+	/** Cached list of valid neighbor coordinates */
 	UPROPERTY(BlueprintReadOnly, Category="Action")
 	TArray<FGridCoord> NeighborsCoords;
 	
+	/** Whether to ignore ground-based movement restrictions */
 	UPROPERTY(BlueprintReadOnly, Category="Action")
 	bool bConsiderFly = true;	
 };

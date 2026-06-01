@@ -27,24 +27,31 @@ public:
 	
 	virtual bool SetLocationsForMeshes_Implementation() override;
 	
+	/** Returns the list of reachable tile coordinates computed by this component */
 	UFUNCTION(BlueprintCallable, Category="Action")
 	TArray<FGridCoord> GetReachableTiles();
 	
+	/** Sets the current movement points available for reachability calculations */
 	UFUNCTION(BlueprintCallable, Category="Action")
 	void SetCurrentMovementPoints(int32 Points);
 	
+	/** Returns the current movement points budget */
 	UFUNCTION(BlueprintCallable, Category="Action")
 	int32 GetCurrentMovementPoints();
 		
+	/** Sets whether flying movement is considered in reachability */
 	UFUNCTION(BlueprintCallable, Category="Action")
 	void SetConsiderFly(bool bConsider);
 	
+	/** Cached list of reachable tile coordinates */
 	UPROPERTY(BlueprintReadOnly, Category="Action")
 	TArray<FGridCoord> ReachableTiles;
 	
+	/** Current movement point budget for reachability calculations */
 	UPROPERTY(BlueprintReadOnly, Category="Action")
 	int32 CurrentMovementPoints;	
 	
+	/** Whether to ignore ground-based movement restrictions */
 	UPROPERTY(BlueprintReadOnly, Category="Action")
 	bool bConsiderFly = true;	
 };

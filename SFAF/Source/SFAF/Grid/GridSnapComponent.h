@@ -14,26 +14,32 @@ class SFAF_API UGridSnapComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:	
-	// Sets default values for this component's properties
+	/** Sets default values for this component's properties */
 	UGridSnapComponent();
 	
 	virtual void BeginPlay() override;
 
+	/** Assigns the target grid actor for snapping calculations */
 	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Grid")
 	void SetGrid(AGridType* Grid);
 	
+	/** Returns the currently assigned grid actor */
 	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Grid")
 	AGridType* GetGrid() const;
 	
+	/** Snaps a world-space location to the nearest valid grid position */
 	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Grid")
 	FVector GetSnappedLocation(FVector WorldLocation) const;
 
+	/** Physical dimensions of a single tile used for snap calculations */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	FVector TileSize = FVector(400.f, 350.f, 50.f);
 
+	/** Grid actor reference used as the snapping origin */
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="Grid")
 	AGridType* GridOriginActor;
 	
+	/** Vertical offset applied after snapping */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid")
 	float ZAlteration = 0.f;
 };

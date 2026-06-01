@@ -101,7 +101,7 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
 	float YOffset = 0.866025f * 2.3f;
 	
-	/** If needed, it is possible on this code to ignore specific actors */
+	/** Actors to exclude from ground-traceduring grid generation */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
 	TArray<AActor*> ActorsToIgnore = TArray<AActor*>();
 
@@ -179,15 +179,15 @@ public:
 	/** Get Static Data, this function is not for blueprint. For blueprint, use the GridRuntimeStateComponent*/
 	FGridTileStaticData* GetTileStaticData(FGridCoord Coord);
 	
-	/** Get Tile Cost*/
+	/** Returns the movement cost to enter a given tile */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	int32 GetTileCost(FGridCoord Coord);
 		
-	/** Get Tile Cost*/
+	/** Populates the neighbor coordinates for a given tile */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	bool GetNeighbors(FGridCoord Coord, TArray<FGridCoord>& Neighbors, bool bConsiderFly);
 	
-	/** Get Path from cost*/
+	/** Populates all coords reachable from Coord within the given movement points budget */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	bool GetReachableCoords(FGridCoord Coord, TArray<FGridCoord>& ReachableCoords, int32 MovementPoints);
 	

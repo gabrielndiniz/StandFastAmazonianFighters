@@ -19,6 +19,8 @@ class SFAF_API AInstancedProps : public AActor
 public: 
 	/** Default constructor */
 	AInstancedProps();
+	
+	/** Applies the configured TopColor to the preview mesh material */
 	void SetTopColor() const;
 
 	/** Called when the actor is spawned or moved in the editor */

@@ -5,6 +5,7 @@
 #include "GameplayTagContainer.h"
 #include "TeamComponent.generated.h"
 
+/** Component that assigns a team affiliation to a combatant actor */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SFAF_API UTeamComponent : public UActorComponent
 {
@@ -12,6 +13,7 @@ class SFAF_API UTeamComponent : public UActorComponent
 
 public:
 
+	/** Sets default values for this component's properties */
 	UTeamComponent();
 
 protected:
@@ -20,8 +22,10 @@ protected:
 
 public:
 
+	/** Numeric identifier for the team this component belongs to */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Team")
 	int32 TeamNumber;
 
+	/** Registers the owning actor with the global TeamSubsystem */
 	void RegisterToTeamSubsystem();
 };

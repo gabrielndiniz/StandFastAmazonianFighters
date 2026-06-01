@@ -8,9 +8,7 @@
 
 class UTacticalControllerComponent;
 
-/**
- * 
- */
+/** AI controller for tactical combat. Uses the tactical component for automated decision-making. */
 UCLASS()
 class SFAF_API ATacticalAIController : public AAIController
 {
@@ -25,6 +23,7 @@ public:
 	// Components
 	// -----------------------------------------------------------------------
 
+	/** Component managing tactical actions for AI-driven units */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UTacticalControllerComponent> TacticalControllerComponent;
 	

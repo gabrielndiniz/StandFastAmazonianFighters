@@ -160,6 +160,8 @@ public:
     /** Return true if Coord is fly only */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     bool GetTileFlyOnly (FGridCoord Coord) const;
+    
+    /** Returns the movement cost of a given tile */
     bool GetTileCost(FGridCoord Coord, int32& Cost) const;
 
     /** Give the center location of the Grid */
@@ -254,6 +256,7 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Grid")
     TMap<FGridCoord, FGameplayTag> TacticalModifiersPositions;
     
+    /** Cache mapping state types to the set of tiles currently in that state (for fast lookups) */
     TMap<EGridTileStateType, TSet<FGridCoord>> TileStateCache;    
     
 protected:

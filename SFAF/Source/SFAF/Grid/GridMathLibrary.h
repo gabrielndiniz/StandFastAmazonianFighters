@@ -34,7 +34,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static FVector HexFindNearestTilePositionOnXYPlane(FVector Position, const FVector TileSize);
 
-    /** Converts a world position to hex offset coordinates. */
+    /** Converts a world-space position to hex offset grid coordinates */
     static FGridCoord HexWorldToOffsetCoord(const FVector& WorldPos, const FVector& GridOrigin, const FVector& TileSize);
 
     /** 
@@ -96,12 +96,14 @@ public:
     * @param Coord Considered coordinate.
     * @param StaticTiles Map of grid static data.
     */
+    /** Finds the six neighboring coordinates for a given hex tile */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static bool GetHexNeighborTiles(
         const FGridCoord Coord,
         TArray<FGridCoord>& NeighborsCoords
     );
     
+    /** Returns true if both coordinates share the same row (same Y) */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static bool IsInTheSameLine(FGridCoord Coord1, FGridCoord Coord2);
     
