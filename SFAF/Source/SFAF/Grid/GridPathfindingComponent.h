@@ -82,10 +82,11 @@ public:
 	
 	/** Returns all coordinates reachable from Coord within the given movement point budget */
 	bool GetAllReachableCoords(
-		FGridCoord Coord, 
-		TArray<FGridCoord>& ReachableCoords, 
-		const int32 Points, 
-		TObjectPtr<UGridRuntimeStateComponent> RuntimeStateComponent);
+			FGridCoord Coord,
+			TArray<FGridCoord>& ReachableCoords,
+			const int32 Points,
+			const bool bIsFlying,
+			TObjectPtr<UGridRuntimeStateComponent> RuntimeStateComponent);
 
 	/** Cached pathfinding data map for quick neighbor/cost lookups */
 	UPROPERTY()
@@ -93,4 +94,13 @@ public:
 	
 	/** Map of path nodes used during A* calculations */
 	TMap<FGridCoord, FPathNode> TilesPaths;
+	
+	/** The flying property from the last pathfinding*/
+	bool bLastIsFlying = false;
+	
+	/** The movement points property from the last pathfinding*/
+	int32 LastPoints = -1;
+	
+	/** The movement points property from the last pathfinding*/
+	FGridCoord LastCoord = FGridCoord(-1, -1);
 };

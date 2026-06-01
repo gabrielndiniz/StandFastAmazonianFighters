@@ -3,10 +3,3 @@
 
 #include "Grid/GridTacticalTypes.h"
 
-GridTacticalTypes::GridTacticalTypes()
-{
-}
-
-GridTacticalTypes::~GridTacticalTypes()
-{
-}

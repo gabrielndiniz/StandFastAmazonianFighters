@@ -33,6 +33,8 @@ struct FGridCoord
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	int32 Y = -1;
 
+	operator FIntPoint() const { return FIntPoint(X, Y); }
+		
 	/** Equality operator for FGridCoord. */
 	FORCEINLINE bool operator==(const FGridCoord& Other) const
 	{

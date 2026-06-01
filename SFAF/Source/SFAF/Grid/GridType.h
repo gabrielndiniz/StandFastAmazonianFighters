@@ -189,7 +189,7 @@ public:
 	
 	/** Populates all coords reachable from Coord within the given movement points budget */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
-	bool GetReachableCoords(FGridCoord Coord, TArray<FGridCoord>& ReachableCoords, int32 MovementPoints);
+	bool GetReachableCoords(FGridCoord Coord, TArray<FGridCoord>& ReachableCoords, bool bIsFlying, int32 MovementPoints);
 	
 protected:
 

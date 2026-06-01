@@ -53,5 +53,5 @@ public:
 	
 	/** Whether to ignore ground-based movement restrictions */
 	UPROPERTY(BlueprintReadOnly, Category="Action")
-	bool bConsiderFly = true;	
+	bool bConsiderFly = false;	
 };

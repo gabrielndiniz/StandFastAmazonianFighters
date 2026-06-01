@@ -59,7 +59,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	TArray<FVector> GetLocationsForMeshes();
 		
-	
+	/** Returns the source or target grid coordinate based on bIsTarget */
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	const FGridCoord& GetCoord(bool bIsTarget) const { return bIsTarget ? TargetCoord : SourceCoord; }
+
 protected:
 	// -----------------------------------------------------------------------
 	// State
@@ -99,6 +102,6 @@ protected:
 
 	/** Weak pointer to the grid actor this action operates on */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
-	TWeakObjectPtr<AGridType> Grid;
+	TObjectPtr<AGridType> Grid;
 
 };

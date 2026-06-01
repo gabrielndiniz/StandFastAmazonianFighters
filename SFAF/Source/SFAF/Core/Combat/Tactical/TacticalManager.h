@@ -7,6 +7,7 @@
 #include "Controllers/TacticalPlayerController.h"
 #include "Controllers/ControllerComponents/TacticalControllerComponent.h"
 #include "GameFramework/Actor.h"
+#include "Grid/GridType.h"
 #include "TacticalComponents/Actions/BaseActionComponent.h"
 #include "TacticalComponents/Actions/Interface/HoverTile.h"
 #include "TacticalComponents/Actions/Interface/SelectTile.h"
@@ -14,8 +15,6 @@
 #include "TacticalComponents/Actions/Pathfinding/NeighborTile.h"
 #include "TacticalComponents/Actions/Pathfinding/ReachableTiles.h"
 #include "TacticalManager.generated.h"
-
-class AGridType;
 /** Bundles references to a team's player controller, AI controller, and tactical component */
 USTRUCT(BlueprintType)
 struct FControllers
@@ -177,4 +176,26 @@ public:
 	/** Updates the current movement points for reachability calculations */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void SetCurrentMovementPoints(int32 Points);
+
+	/**
+	 * Computes reachable tiles from the SelectTile's source coordinate within the specified movement budget,
+	 * updates the ReachableMesh visual instances at the corresponding world locations,
+	 * and returns the results including the reachable coordinates and their world positions.
+	 *
+	 * Sets SourceCoord and CurrentMovementPoints on the ReachableTiles component,
+	 * computes reachable tiles via the Grid, retrieves world locations from the
+	 * GridRuntimeStateComponent, and instantiates the ReachableMesh at those positions.
+	 *
+	 * @param MovementPoints     The movement point budget for reachability calculations
+	 * @param bFlying			 Consider if the movement is a flying.
+	 * @param OutReachableTiles  All grid coordinates reachable within the movement budget
+	 * @param OutLocations       World-space locations of the reachable tiles (used for mesh placement)
+	 * @return                   True if at least one reachable tile was found
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	bool CalculateReachableTiles(
+		int32 MovementPoints,
+		bool bFlying,
+		TArray<FGridCoord>& OutReachableTiles, TArray<FVector>& OutLocations
+	);
 };

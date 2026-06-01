@@ -36,46 +36,56 @@ void UGridPathfindingComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	// ...
 }
 
-bool UGridPathfindingComponent::GetNeighborsCoords(const FGridCoord Coord, TArray<FGridCoord>& NeighborsCoords,
-                                                   const TObjectPtr<UGridRuntimeStateComponent> RuntimeStateComponent, 
-                                                   const bool bIsFlying)
+bool UGridPathfindingComponent::GetNeighborsCoords(
+    const FGridCoord Coord,
+    TArray<FGridCoord>& NeighborsCoords,
+    const TObjectPtr<UGridRuntimeStateComponent> RuntimeStateComponent,
+    const bool bIsFlying)
 {
-    if (!RuntimeStateComponent) { return false; }
-    
-    if (!RuntimeStateComponent->HasTile(Coord)) { return false; }
+    if (!RuntimeStateComponent) return false;
+    if (!RuntimeStateComponent->HasTile(Coord)) return false;
 
     NeighborsCoords.Empty();
-    
+
+    // Cache hit
     if (TilePathfindMap.Contains(Coord))
     {
         NeighborsCoords = TilePathfindMap.Find(Coord)->Neighbors;
         return true;
     }
-    
+
     TArray<FGridCoord> Results;
-    
     if (!UGridMathLibrary::GetHexNeighborTiles(Coord, Results))
     {
         return false;
     }
 
-    for (FGridCoord Result : Results)
+    for (const FGridCoord& Result : Results)
     {
-        if (!RuntimeStateComponent->HasTile(Result)) { continue; }
-        
-        FGridTileStaticData* TileStaticData = RuntimeStateComponent->GetMutableStaticTile(Result);
-        
-        if (TileStaticData->TileTags.HasTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.Blocked"))) 
-            || TileStaticData->TileTags.HasTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.Obstacle")))
-           )
+        if (Result.X == Coord.X && Result.Y == Coord.Y) continue;
+        if (!RuntimeStateComponent->HasTile(Result)) continue;
+
+        const FGridTileStaticData* TileStaticData = RuntimeStateComponent->GetStaticTile(Result);
+        if (!TileStaticData) continue;
+
+        const FGameplayTagContainer& Tags = TileStaticData->TileTags;
+
+        // Blocked e Obstacle 
+        if (Tags.HasTag(FGameplayTag::RequestGameplayTag("Grid.Type.Blocked")) ||
+            Tags.HasTag(FGameplayTag::RequestGameplayTag("Grid.Type.Obstacle")))
         {
             continue;
         }
-        
-        if (bIsFlying || !TileStaticData->TileTags.HasTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.FlyingOnly"))))
+
+        // FlyingOnly 
+        if (Tags.HasTag(FGameplayTag::RequestGameplayTag("Grid.Type.FlyingOnly")) && !bIsFlying)
         {
-            NeighborsCoords.AddUnique(Result);
+            continue;
         }
+
+        
+
+        NeighborsCoords.AddUnique(Result);
     }
 
     if (!NeighborsCoords.IsEmpty())
@@ -84,7 +94,6 @@ bool UGridPathfindingComponent::GetNeighborsCoords(const FGridCoord Coord, TArra
         TilePathfindData.Neighbors = NeighborsCoords;
         TilePathfindData.bFlyOnly = RuntimeStateComponent->GetTileFlyOnly(Coord);
         RuntimeStateComponent->GetTileCost(Coord, TilePathfindData.Cost);
-
         TilePathfindMap.Add(Coord, TilePathfindData);
     }
 
@@ -97,78 +106,111 @@ void UGridPathfindingComponent::ClearPathfindingCache()
 	TilePathfindMap.Empty();
 }
 
-bool UGridPathfindingComponent::GetAllReachableCoords(FGridCoord Coord, TArray<FGridCoord>& ReachableCoords,
-	const int32 Points, TObjectPtr<UGridRuntimeStateComponent> RuntimeStateComponent)
+
+bool UGridPathfindingComponent::GetAllReachableCoords(
+    FGridCoord Coord,
+    TArray<FGridCoord>& ReachableCoords,
+    const int32 Points,
+    const bool bIsFlying,
+    TObjectPtr<UGridRuntimeStateComponent> RuntimeStateComponent)
 {
-	if (!RuntimeStateComponent) { return false; }
-	
-	if (!RuntimeStateComponent->HasTile(Coord)) { return false; }
-	
-	ReachableCoords.Empty();
-	
-	int32 TotalCost = 0;
-	
-	// Setting selected tile
-	for (FGridCoord TileCoord : RuntimeStateComponent->GetTilesByState(EGridTileStateType::Selected))
-	{
-		RuntimeStateComponent->RemoveTileState(TileCoord, EGridTileStateType::Selected);		
-	}
-	RuntimeStateComponent->AddTileState(Coord, EGridTileStateType::Selected);
-	
-	TQueue<FGridCoord> OpenList;
-	OpenList.Enqueue(Coord);
+    if (!RuntimeStateComponent) return false;
+    if (!RuntimeStateComponent->HasTile(Coord)) return false;
 
-	while (!OpenList.IsEmpty())
-	{
-		FGridCoord CurrentCoord;
-		OpenList.Dequeue(CurrentCoord);
+    // Invalidate cache if change flying or origin coord
+    // Points do not invalidate cache from neighbors
+    if (bIsFlying != bLastIsFlying || !(Coord == LastCoord))
+    {
+        TilePathfindMap.Empty();
+        bLastIsFlying = bIsFlying;
+        LastCoord = Coord;
+    }
 
-		if (TotalCost > Points)
-		{
-			break; // If cost is enough, break loop
-		}
+    // TilesPaths recalculates always, even changing points
+    ReachableCoords.Empty();
+    TilesPaths.Empty();
 
-		if (TilesPaths.Contains(CurrentCoord))
-		{
-			continue; // Ignore if already analyzed
-		}
+    TMap<FGridCoord, int32> CostSoFar;
+    TArray<TPair<int32, FGridCoord>> OpenList;
 
-		FPathNode PathNode;
-		PathNode.Coord = CurrentCoord;
-		int32 CostSoFar = 0;
+    auto Enqueue = [&](int32 Cost, FGridCoord C)
+    {
+        int32 InsertIndex = OpenList.Num();
+        for (int32 i = 0; i < OpenList.Num(); ++i)
+        {
+            if (Cost < OpenList[i].Key)
+            {
+                InsertIndex = i;
+                break;
+            }
+        }
+        OpenList.Insert(TPair<int32, FGridCoord>(Cost, C), InsertIndex);
+    };
 
-		if (TilePathfindMap.Contains(CurrentCoord))
-		{
-			CostSoFar = TilePathfindMap[CurrentCoord].Cost;
-		}
-		
-		TotalCost += CostSoFar;
+    CostSoFar.Add(Coord, 0);
+    Enqueue(0, Coord);
 
-		TilesPaths.Add(CurrentCoord, PathNode);
+    for (FGridCoord TileCoord : RuntimeStateComponent->GetTilesByState(EGridTileStateType::Selected))
+    {
+        RuntimeStateComponent->RemoveTileState(TileCoord, EGridTileStateType::Selected);
+    }
+    RuntimeStateComponent->AddTileState(Coord, EGridTileStateType::Selected);
 
-		TArray<FGridCoord> NeighborsCoords;
-		if (!GetNeighborsCoords(CurrentCoord, NeighborsCoords, RuntimeStateComponent, false))
-		{
-			continue; // If there is no neighbor, go to next
-		}
+    while (OpenList.Num() > 0)
+    {
+        TPair<int32, FGridCoord> Current = OpenList[0];
+        OpenList.RemoveAt(0);
 
-		for (FGridCoord Neighbor : NeighborsCoords)
-		{
-			if (TotalCost + TilePathfindMap[Neighbor].Cost > Points)
-			{
-				continue; // Ignore if overreach points
-			}
+        const int32 CurrentCost = Current.Key;
+        const FGridCoord CurrentCoord = Current.Value;
 
-			if (!TilesPaths.Contains(Neighbor))
-			{
-				OpenList.Enqueue(Neighbor);
-			}
-		}
-	}
+        if (TilesPaths.Contains(CurrentCoord)) continue;
 
-	TilesPaths.GetKeys(ReachableCoords);
+        FPathNode PathNode;
+        PathNode.Coord = CurrentCoord;
+        PathNode.CostSoFar = CurrentCost;
+        TilesPaths.Add(CurrentCoord, PathNode);
 
-	return !ReachableCoords.IsEmpty();
+        TArray<FGridCoord> NeighborsCoords;
+        GetNeighborsCoords(CurrentCoord, NeighborsCoords, RuntimeStateComponent, bIsFlying);
+
+        for (const FGridCoord& Neighbor : NeighborsCoords)
+        {
+            if (Neighbor == Coord) continue;
+            if (TilesPaths.Contains(Neighbor)) continue;
+
+            int32 NeighborEntryCost = 1;
+            if (TilePathfindMap.Contains(Neighbor))
+            {
+                NeighborEntryCost = TilePathfindMap[Neighbor].Cost;
+            }
+
+            const int32 NewCost = CurrentCost + NeighborEntryCost;
+            if (NewCost > Points) continue;
+
+            const int32* ExistingCost = CostSoFar.Find(Neighbor);
+            if (!ExistingCost || NewCost < *ExistingCost)
+            {
+                CostSoFar.Add(Neighbor, NewCost);
+                Enqueue(NewCost, Neighbor);
+            }
+        }
+    }
+
+
+    for (FGridCoord ReachableCoord : ReachableCoords)
+    {
+        RuntimeStateComponent->RemoveTileState(ReachableCoord, EGridTileStateType::Neighbor);
+        RuntimeStateComponent->RemoveTileState(ReachableCoord, EGridTileStateType::Analyzed);
+        RuntimeStateComponent->RemoveTileState(ReachableCoord, EGridTileStateType::InPath);
+        RuntimeStateComponent->RemoveTileState(ReachableCoord, EGridTileStateType::Discovered);
+        RuntimeStateComponent->AddTileState(ReachableCoord, EGridTileStateType::None);        
+    }
+    ReachableCoords.Remove(Coord);
+    
+    TilesPaths.GetKeys(ReachableCoords);
+    
+    return !ReachableCoords.IsEmpty();
 }
 
 

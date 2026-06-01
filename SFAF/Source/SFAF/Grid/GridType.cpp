@@ -532,7 +532,7 @@ bool AGridType::GetNeighbors(FGridCoord Coord, TArray<FGridCoord>& Neighbors, co
 	return GridPathFindingComponent->GetNeighborsCoords(Coord, Neighbors, GridRuntimeStateComponent, bConsiderFly);
 }
 
-bool AGridType::GetReachableCoords(FGridCoord Coord, TArray<FGridCoord>& ReachableCoords, int32 MovementPoints)
+bool AGridType::GetReachableCoords(FGridCoord Coord, TArray<FGridCoord>& ReachableCoords, bool bIsFlying, int32 MovementPoints)
 {
 	if (!GridRuntimeStateComponent || !GridPathFindingComponent) { return false; }
 	
@@ -540,6 +540,7 @@ bool AGridType::GetReachableCoords(FGridCoord Coord, TArray<FGridCoord>& Reachab
 		Coord, 
 		ReachableCoords, 
 		MovementPoints, 
+		bIsFlying,
 		GridRuntimeStateComponent);
 }
 

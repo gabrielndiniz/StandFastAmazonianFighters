@@ -33,30 +33,36 @@ void UReachableTiles::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	// ...
 }
 
+
 bool UReachableTiles::SetLocationsForMeshes_Implementation()
 {
+	
 	LocationsForMeshes.Empty();	
 	ReachableTiles.Empty();
 		
-	Grid->GetReachableCoords(SourceCoord, ReachableTiles, CurrentMovementPoints);
+	if (!Grid)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Grid is invalid, returning false"));
+		return false;
+	}
+	if (!Grid || CurrentMovementPoints <= 0) {
+		UE_LOG(LogTemp, Warning, TEXT("Grid or movement points invalid, skipping calculation"));
+		return false;
+	}
+	
+	Grid->GetReachableCoords(SourceCoord, ReachableTiles, bConsiderFly, CurrentMovementPoints);
+	
+	ReachableTiles.Remove(SourceCoord);
 
 	for (FGridCoord ReachableTile : ReachableTiles)
 	{
+	
 		FGridTileStaticData* TileStaticData = Grid->GetTileStaticData(ReachableTile);
 		
-		if (TileStaticData->TileTags.HasTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.Blocked"))) 
-			|| TileStaticData->TileTags.HasTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.Obstacle")))
-			)
-		{
-			continue;
-		}
-		
-		if (bConsiderFly || !TileStaticData->TileTags.HasTag(FGameplayTag::RequestGameplayTag(TEXT("Grid.Type.FlyingOnly"))))
-		{
-			LocationsForMeshes.Add(TileStaticData->WorldLocation);
-		}
+		LocationsForMeshes.Add(TileStaticData->WorldLocation);
 	}
-	
+
+
 	return !LocationsForMeshes.IsEmpty();
 }
 

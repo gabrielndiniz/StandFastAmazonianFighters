@@ -97,6 +97,12 @@ void ATacticalManager::Initiate()
 			SequencedActions.Add(SelectTile,NeighborTile);
 		}
 	}
+	if (ReachableTiles && Grid && ReachableMesh)
+	{
+		ReachableTiles->SetGrid(Grid);
+		ReachableTiles->SetReady(true);
+		ComponentMesh.Add(ReachableTiles, ReachableMesh);
+	}
 }
 
 void ATacticalManager::SetGrid(AGridType* GridType)
@@ -187,7 +193,7 @@ void ATacticalManager::ExecuteAction(UBaseActionComponent* ActionComponent)
 			|| !DebugController.ControllerComponent->GetCoordToComponent(TargetCoord, 
 			ActionComponent->GetFName(), true))
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No Coords found."))
+			//UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No Coords found."))
 			return;
 		}
 		bChange = ActionComponent->Execute(
@@ -248,4 +254,53 @@ void ATacticalManager::SetConsiderFlying(bool bConsider)
 {
 	NeighborTile->SetConsiderFly(bConsider);
 	ReachableTiles->SetConsiderFly(bConsider);
+}
+
+bool ATacticalManager::CalculateReachableTiles(
+	int32 InMovementPoints,
+	bool bFlying,
+	TArray<FGridCoord>& OutReachableTiles, TArray<FVector>& OutLocations)
+{
+	OutReachableTiles.Empty();
+	OutLocations.Empty();
+
+	if (!Grid || !Grid->GridRuntimeStateComponent)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculateReachableTiles - Missing Grid or GridRuntimeStateComponent."));
+		return false;
+	}
+
+	if (!SelectTile)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculateReachableTiles - Missing SelectTile."));
+		return false;
+	}
+
+	//UGridRuntimeStateComponent* RuntimeState = Grid->GridRuntimeStateComponent;
+	
+	const FGridCoord& SourceCoord = SelectTile->GetCoord(false);
+	
+	ReachableTiles->SetConsiderFly(bFlying);
+	
+	ReachableTiles->SetCurrentMovementPoints(InMovementPoints);
+	
+	ReachableTiles->Execute(SourceCoord, true, SourceCoord);
+			
+	OutReachableTiles = ReachableTiles->GetReachableTiles();
+		
+	OutLocations = ReachableTiles->GetLocationsForMeshes();
+
+	if (ReachableMesh)
+	{
+		ReachableMesh->ClearInstances();
+
+		for (const FVector& Location : OutLocations)
+		{
+			FTransform Transform = FTransform::Identity;
+			Transform.SetLocation(Location);
+			ReachableMesh->AddInstance(Transform, true);
+		}
+	}
+
+	return !OutReachableTiles.IsEmpty();
 }

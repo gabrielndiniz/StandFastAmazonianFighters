@@ -3,6 +3,8 @@
 
 #include "Core/Combat/Tactical/TacticalComponents/Actions/BaseActionComponent.h"
 
+#include "Kismet/GameplayStatics.h"
+
 // Sets default values for this component's properties
 UBaseActionComponent::UBaseActionComponent()
 {
@@ -18,8 +20,8 @@ UBaseActionComponent::UBaseActionComponent()
 void UBaseActionComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...	
+	Grid = Cast<AGridType>(UGameplayStatics::GetActorOfClass(GetWorld(), AGridType::StaticClass()));
+	
 
 }
 
@@ -78,6 +80,8 @@ bool UBaseActionComponent::Execute_Implementation(
 		SetLocationsForMeshes();
 		return true;
 	}
+	
+	SetLocationsForMeshes();
 	return false;
 }
 
