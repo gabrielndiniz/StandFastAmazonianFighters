@@ -3,10 +3,10 @@
 
 #include "GridType.h"
 #include "GridModifier.h"
-#include "GridSnapComponent.h"
 #include "GridCoord.h"
 #include "GridMathLibrary.h"
 #include "GridTacticalTypes.h"
+#include "Kismet/GameplayStatics.h"
 
 
 // Sets default values
@@ -183,92 +183,6 @@ bool AGridType::RemoveInstanceMesh(int TileType, int Index) const
 	return false;
 }
 
-FHitResult AGridType::HitTraceGround(FVector Location) const
-{
-	
-	
-	FHitResult Hit;
-	FVector StartLocation = Location + FVector(0, 0, TraceRange);
-	FVector EndLocation = Location - FVector(0, 0, TraceRange);
-	FCollisionQueryParams TraceParams;
-	TraceParams.AddIgnoredActors(ActorsToIgnore);
-
-	// Perform line trace to find ground
-	GetWorld()->LineTraceSingleByChannel(
-		Hit,
-		StartLocation,
-		EndLocation,
-		ECollisionChannel::ECC_GameTraceChannel2, // line of sight or Grid
-		TraceParams
-	);
-
-	// Check if we hit something valid
-	AActor* HitActor = Hit.GetActor();
-	if (Hit.bBlockingHit && HitActor && !ActorsToIgnore.Contains(HitActor))
-	{
-		return Hit;
-	}
-
-	return FHitResult();
-}
-
-bool AGridType::TraceGround(FVector& Location, FGameplayTagContainer& TileTags, bool& bGridModifier,
-                            FGameplayTag& ModifierTag, float& ZScale) const
-{
-	// First, check if there is a hit result
-	FHitResult Hit = HitTraceGround(Location);
-	if (!Hit.bBlockingHit)
-	{
-		TileTags = EnvironmentTileTags;
-		bGridModifier = false;
-		ModifierTag = FGameplayTag::EmptyTag;
-		ZScale = 1.f;
-		return false;
-	}
-			
-	// Second, check for a Modifier
-	float CorrectionFactor = 0.f;
-	if (AGridModifier* Modifier = Cast<AGridModifier>(Hit.GetActor()))
-	{
-		// In the case of Flying only, it should be above ground.
-		if (ModifierTag == FGameplayTag::RequestGameplayTag("Grid.Type.FlyingOnly"))
-		{
-			CorrectionFactor = Hit.GetActor()->GetComponentsBoundingBox().GetExtent().Z;
-		}
-		
-		TileTags = Modifier->GetTileTags();
-		bGridModifier = true;
-		ModifierTag = Modifier->GetTileModificationTag();
-		ZScale = Modifier->GetActorScale3D().Z;		
-	}
-	else
-	{
-		TileTags = StandardTileTags;
-		bGridModifier = false;
-		ModifierTag = FGameplayTag::EmptyTag;
-		ZScale = 1.f;
-	}	
-	
-	// Third, calculate Z adjustment. The +1.f is for aesthetic depth.
-	
-	float HitActorLocationZ =  Hit.GetActor()->GetActorLocation().Z;		
-	float ZCorrection = HitActorLocationZ + TraceSphereRadius + 1.f; 
-	
-	
-	const float GridSnapResult =
-	FMath::GridSnap(ZCorrection, GridDataComponent->GetTileSize().Z);
-
-	
-	
-	ZCorrection = GridSnapResult + 	CorrectionFactor;
-	
-	Location.Z += ZCorrection;
-	
-	
-		
-	return true;
-}
-
 bool AGridType::AddGridTileInstance(int32 TileIndex, const FTransform& TileTransform, FGridCoord TilePosition,
                                     bool bCheckForEquivalents, const FGameplayTagContainer& TileTags, 
                                     ACombatant_Base* UnitOnTile)
@@ -365,6 +279,22 @@ bool AGridType::GenerateGrid(const FVector Location)
 	float ZScale = 1.f;
 	bool bSpawnOnEnvironment = GridDataComponent->GetSpawnOnEnvironment();
 		
+	TMap<FGridCoord, AGridModifier*> ModifiersByCoord;
+	TArray<AActor*> FoundModifiers;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGridModifier::StaticClass(), FoundModifiers);
+
+	for (AActor* Actor : FoundModifiers)
+	{
+		if (AGridModifier* Modifier = Cast<AGridModifier>(Actor))
+		{
+			FGridCoord SnapCoord = Modifier->GetSnappedCoord();
+			if (SnapCoord.X != -1)
+			{
+				ModifiersByCoord.Add(SnapCoord, Modifier);
+			}
+		}
+	}
+	
 	// Loop through the grid dimensions
 	for (int32 x = 0; x < TileCount.X - 1; ++x)
 	{
@@ -389,33 +319,47 @@ bool AGridType::GenerateGrid(const FVector Location)
 			if (bSpawnOnEnvironment)
 			{
 				// Trace Ground for Z location and Grid Modifiers
-				if (TraceGround(TileLocation, TileTags, bGridModifier, ModifierTag, ZScale))
+				
+				TileLocation = UGridMathLibrary::HexOffsetToWorld(
+					TilePosition, GridLocation, TileSize, ZCorrection);
+
+				TileTags = StandardTileTags;
+				bGridModifier = false;
+				
+
+				// Lookup direto — sem trace
+				if (AGridModifier** FoundModifier = ModifiersByCoord.Find(TilePosition))
 				{
-					
-					TileTransform.SetLocation(TileLocation);
-					bTileNeeded = AddGridTileInstance(TileIndex, TileTransform, TilePosition, bCheckForEquivalents,
-						TileTags, UnitOnTile);
-					
-					if (bGridModifier)
+					AGridModifier* Modifier = *FoundModifier;
+					TileTags = Modifier->GetTileTags();
+					ModifierTag = Modifier->GetTileModificationTag();
+            
+					// Z vem da posição snappada do modificador
+					TileLocation.Z = Modifier->GetSnappedWorldLocation().Z;
+					bGridModifier = true;
+				}
+
+				TileTransform.SetLocation(TileLocation);
+				bTileNeeded = AddGridTileInstance(TileIndex, TileTransform, TilePosition,
+					false, TileTags, nullptr);
+
+				if (bGridModifier && bTileNeeded)
+				{
+					GridRuntimeStateComponent->AddTacticalModifierPosition(TilePosition, ModifierTag);
+					if (UInstancedStaticMeshComponent* ModMesh = SelectTacticMeshWithTag(ModifierTag))
 					{
-						
-						GridRuntimeStateComponent->AddTacticalModifierPosition(TilePosition, ModifierTag);
-						if (UInstancedStaticMeshComponent* ModMesh = SelectTacticMeshWithTag(ModifierTag))
-						{
-							ModMesh->AddInstance(TileTransform, true);
-						}
-					}
-					
-					if (bTileNeeded)
-					{
-						TileIndex++;
+						ModMesh->AddInstance(TileTransform, true);
 					}
 				}
-				else
+
+				if (bTileNeeded)
 				{
-					
-					// No ground hit — skip tile
-					continue;
+					TileIndex++;
+					if (GridRuntimeStateComponent->GetFirstTile().X == TNumericLimits<int32>::Max())
+					{
+						GridRuntimeStateComponent->SetFirstTile(TilePosition);
+					}
+					GridRuntimeStateComponent->SetLastTile(TilePosition);
 				}
 			}
 			else

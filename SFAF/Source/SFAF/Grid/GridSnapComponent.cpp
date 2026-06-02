@@ -39,7 +39,7 @@ FVector UGridSnapComponent::GetSnappedLocation(FVector WorldLocation) const
 		? GridOriginActor->GetActorLocation()
 		: FVector::ZeroVector;
 
-	const FGridCoord Coord =
+	Coord =
 		UGridMathLibrary::HexWorldToOffsetCoord(
 			WorldLocation,
 			GridOrigin,
@@ -57,5 +57,10 @@ FVector UGridSnapComponent::GetSnappedLocation(FVector WorldLocation) const
 	Snapped.Z = WorldLocation.Z+ZAlteration;
 
 	return Snapped;
+}
+
+FGridCoord UGridSnapComponent::GetSnapCoord() const
+{
+	return Coord;
 }
 

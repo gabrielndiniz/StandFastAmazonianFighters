@@ -293,6 +293,7 @@ bool ATacticalManager::CalculateReachableTiles(
 	if (ReachableMesh)
 	{
 		ReachableMesh->ClearInstances();
+		NeighborMesh->ClearInstances();
 
 		for (const FVector& Location : OutLocations)
 		{

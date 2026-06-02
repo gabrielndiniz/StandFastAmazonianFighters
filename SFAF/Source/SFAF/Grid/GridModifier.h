@@ -48,6 +48,14 @@ public:
 
 	/** Checks if a world position is within the modifier's volume */
 	bool AffectsPosition(const FVector& WorldPos) const;
+	
+	/** Return the correct Coord */
+	UFUNCTION(BlueprintPure, Category = "Grid")
+	FGridCoord GetSnappedCoord() const;
+	
+	/** Return the correct world location */
+	UFUNCTION(BlueprintPure, Category = "Grid")
+	FVector GetSnappedWorldLocation() const;
 
 	// -----------------------------------------------------------------------
 	// Components

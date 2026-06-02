@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GridCoord.h"
 #include "Components/ActorComponent.h"
 #include "GridSnapComponent.generated.h"
 
@@ -31,6 +32,10 @@ public:
 	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Grid")
 	FVector GetSnappedLocation(FVector WorldLocation) const;
 
+	/** Snaps a world-space location to the nearest valid grid position */
+	UFUNCTION(CallInEditor, BlueprintPure, Category = "Grid")
+	FGridCoord GetSnapCoord() const;
+	
 	/** Physical dimensions of a single tile used for snap calculations */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	FVector TileSize = FVector(400.f, 350.f, 50.f);
@@ -42,4 +47,8 @@ public:
 	/** Vertical offset applied after snapping */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid")
 	float ZAlteration = 0.f;
+	
+	/** Coord equivalent from the Grid. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Grid")
+	mutable FGridCoord Coord;
 };

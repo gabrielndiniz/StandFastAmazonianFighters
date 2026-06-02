@@ -135,3 +135,21 @@ bool AGridModifier::AffectsPosition(const FVector& WorldPos) const
 		   FMath::Abs(RelativePos.Z) <= BoxExtent.Z;
 }
 
+FGridCoord AGridModifier::GetSnappedCoord() const
+{
+	if (GridSnapComponent)
+	{
+		GridSnapComponent->GetSnappedLocation(GetActorLocation());
+		return GridSnapComponent->GetSnapCoord();
+	}
+	return FGridCoord(-1, -1);
+}
+
+FVector AGridModifier::GetSnappedWorldLocation() const
+{
+	if (GridSnapComponent)
+	{
+		return GridSnapComponent->GetSnappedLocation(GetActorLocation());
+	}
+	return GetActorLocation();
+}

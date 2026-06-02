@@ -130,18 +130,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Grid|Visual")
 	bool RemoveInstanceMesh(int TileType, int Index) const;
 
-	/** Returns the Hits Results for tracing ground */
-	UFUNCTION(BlueprintCallable, Category = "Grid|Trace")
-	FHitResult HitTraceGround(FVector Location) const;
-
 	/** Returns the Trace Sphere considered range */
 	UFUNCTION(BlueprintPure, Category = "Grid|Trace")
 	float GetTraceSphereRange() const { return TraceSphereRadius; }
-	
-	/** Used when spawning grid. Trace ground on Z axis to see where to locate a tile */
-	UFUNCTION()
-	bool TraceGround(FVector& Location, FGameplayTagContainer& TileTags, bool& bGridModifier,
-	                 FGameplayTag& ModifierTag, float& ZScale) const;
 
 	/** Add the Tile on the Grid*/
 	bool AddGridTileInstance(int32 TileIndex, const FTransform& TileTransform, FGridCoord TilePosition, bool bCheckForEquivalents,
