@@ -104,6 +104,10 @@ private:
 	/** Actors to exclude from ground-traceduring grid generation */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
 	TArray<AActor*> ActorsToIgnore = TArray<AActor*>();
+	
+	/** Adjust on Z for gridmesh */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
+	float ZOffset = 0.01f;
 
 public:
 	// -----------------------------------------------------------------------

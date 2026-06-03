@@ -105,17 +105,19 @@ bool AGridType::GetTileModifier(const FGridCoord& Coord, FGameplayTag& OutModifi
 }
 
 void AGridType::AddInstanceMesh(const FGameplayTagContainer& TileTags, const FTransform& Transform)
-{
+{	
+	FTransform AdjustTransform = Transform;
+	AdjustTransform.SetLocation(Transform.GetLocation()+FVector(0,0,ZOffset));
 	if (GridMesh)
 	{
-		GridMesh->AddInstance(Transform, true);
+		GridMesh->AddInstance(AdjustTransform, true);
 	}
 
 	for (const FGameplayTag& Tag : TileTags)
 	{
 		if (UInstancedStaticMeshComponent* TacticalMesh = SelectTacticMeshWithTag(Tag))
 		{
-			TacticalMesh->AddInstance(Transform, true);
+			TacticalMesh->AddInstance(AdjustTransform, true);
 		}
 	}
 }

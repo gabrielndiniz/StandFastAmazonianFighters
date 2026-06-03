@@ -176,6 +176,10 @@ public:
 	/** Updates the current movement points for reachability calculations */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void SetCurrentMovementPoints(int32 Points);
+	
+	/** Adjust on Z for instantiate meshes */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
+	float ZOffset = 0.01f;
 
 	/**
 	 * Computes reachable tiles from the SelectTile's source coordinate within the specified movement budget,

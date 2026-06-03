@@ -238,7 +238,7 @@ void ATacticalManager::ExecuteAction(UBaseActionComponent* ActionComponent)
 			for (const FVector& Location : ActionComponent->GetLocationsForMeshes())
 			{
 				FTransform Transform = FTransform::Identity;
-				Transform.SetLocation(Location);
+				Transform.SetLocation(Location + FVector(0,0,ZOffset));
 				Mesh->AddInstance(Transform,true);
 			}					
 		}
