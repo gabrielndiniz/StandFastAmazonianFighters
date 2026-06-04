@@ -5,6 +5,7 @@
 #include "AbilitySystemComponent.h"
 #include "AttributeSet.h"
 #include "CombatantComponents/TeamComponent.h"
+#include "Core/Combat/Team/TeamSubsystem.h"
 
 ACombatant_Base::ACombatant_Base()
 {
@@ -28,4 +29,58 @@ void ACombatant_Base::InitAbilityActorInfo()
 	{
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	}
+}
+
+void ACombatant_Base::DestroyUnit()
+{
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->CancelAbilities();
+		AbilitySystemComponent->ClearActorInfo();
+	}
+
+	TArray<AActor*> ChildActors;
+	GetAttachedActors(ChildActors);
+	for (AActor* Child : ChildActors)
+	{
+		if (Child)
+		{
+			Child->Destroy();
+		}
+	}
+
+	Destroy();
+}
+
+int32 ACombatant_Base::GetTeam() const
+{
+	if (TeamComponent)
+	{
+		return TeamComponent->TeamNumber;
+	}
+	return 0;
+}
+
+void ACombatant_Base::SetTeam(int32 NewTeam)
+{
+	if (!TeamComponent)
+	{
+		return;
+	}
+
+	UTeamSubsystem* TeamSubsystem = GetWorld() ? GetWorld()->GetSubsystem<UTeamSubsystem>() : nullptr;
+
+	int32 OldTeam = TeamComponent->TeamNumber;
+	TeamComponent->TeamNumber = NewTeam;
+
+	if (TeamSubsystem)
+	{
+		if (OldTeam != 0)
+		{
+			TeamSubsystem->UnregisterUnitFromTeam(this, OldTeam);
+		}
+		TeamSubsystem->RegisterUnitToTeam(this, NewTeam);
+	}
+
+	OnTeamChanged.Broadcast(NewTeam);
 }

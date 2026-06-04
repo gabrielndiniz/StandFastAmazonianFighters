@@ -12,6 +12,8 @@
 class UAbilitySystemComponent;
 class UAttributeSet;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTeamChanged, int32, NewTeam);
+
 // ---------------------------------------------------------------------------
 // Actor
 // ---------------------------------------------------------------------------
@@ -38,6 +40,22 @@ public:
 	/** Returns the gameplay tag identifying the unit type */
 	UFUNCTION(BlueprintCallable, Category="Combatant|GAS")
 	FGameplayTag GetUnitTypeTag() const { return UnitTypeTag; }
+
+	/** Destroys the unit and all children/sub-actors cleanly */
+	UFUNCTION(BlueprintCallable, Category="Combatant")
+	void DestroyUnit();
+
+	/** Returns the current team number */
+	UFUNCTION(BlueprintCallable, Category="Combatant|Team")
+	int32 GetTeam() const;
+
+	/** Sets the team number and registers with the TeamSubsystem */
+	UFUNCTION(BlueprintCallable, Category="Combatant|Team")
+	void SetTeam(int32 NewTeam);
+
+	/** Event broadcast when the team changes */
+	UPROPERTY(BlueprintAssignable, Category="Combatant|Team")
+	FOnTeamChanged OnTeamChanged;
 	
 protected:
 

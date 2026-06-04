@@ -49,6 +49,10 @@ public:
 	
 	/**Get the Data*/
 	FGridTileStaticData GetTileData(bool bIsTarget);
+
+	/** Returns both source and target tile data at once */
+	UFUNCTION(BlueprintPure, Category = "Action")
+	void GetTileData(FGridTileStaticData& OutSourceData, FGridTileStaticData& OutTargetData) const;
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Action")
 	bool SetLocationsForMeshes();

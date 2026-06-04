@@ -12,6 +12,7 @@
 #include "TacticalComponents/Actions/Interface/HoverTile.h"
 #include "TacticalComponents/Actions/Interface/SelectTile.h"
 #include "TacticalComponents/Actions/Interface/TargetTile.h"
+#include "TacticalComponents/Actions/Pathfinding/AddRemoveUnit.h"
 #include "TacticalComponents/Actions/Pathfinding/NeighborTile.h"
 #include "TacticalComponents/Actions/Pathfinding/ReachableTiles.h"
 #include "TacticalManager.generated.h"
@@ -142,6 +143,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UReachableTiles* ReachableTiles;
 	
+	/** Component handling Adding and Removing Unit */
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
+	UAddRemoveUnit* AddRemoveUnit;
+	
 	/** Mapping the Actions with their Static Meshes*/
 	UPROPERTY()
 	TMap<UBaseActionComponent*, UInstancedStaticMeshComponent*> ComponentMesh;	
@@ -177,7 +182,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void SetCurrentMovementPoints(int32 Points);
 	
-	/** Adjust on Z for instantiate meshes */
+	/** Configures AddRemoveUnit with the unit tag, team, add/remove mode, change-team flag, and combatant database */
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	void StartAddOrRemoveUnit(FGameplayTag InUnit, int32 InTeam, bool bInAdd, bool bInChangeTeam) const;
+	
+	/** Adjust on Z for instantiated meshes */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
 	float ZOffset = 0.01f;
 

@@ -86,6 +86,16 @@ bool ATacticalPlayerController::SelectTile() const
 		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
 		return false;
 	}
+	if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("AddRemoveUnit"), false))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
+		return false;
+	}
+	if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("AddRemoveUnit"), true))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
+		return false;
+	}
 	return true;
 }
 

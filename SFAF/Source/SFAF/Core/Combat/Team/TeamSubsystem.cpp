@@ -22,3 +22,24 @@ void UTeamSubsystem::RegisterUnitToTeam(ACombatant_Base* Unit, int32 TeamNumber)
 		Team.Combatants.Add(Unit);
 	}
 }
+
+void UTeamSubsystem::UnregisterUnitFromTeam(ACombatant_Base* Unit, int32 TeamNumber)
+{
+	if (!Unit || !TeamNumber)
+	{
+		return;
+	}
+
+	FTeam* Team = TeamRegistry.Find(TeamNumber);
+	if (!Team)
+	{
+		return;
+	}
+
+	Team->Combatants.Remove(Unit);
+
+	if (Team->Combatants.IsEmpty())
+	{
+		TeamRegistry.Remove(TeamNumber);
+	}
+}

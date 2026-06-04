@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameplayTagContainer.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "TeamSubsystem.generated.h"
 
@@ -66,6 +65,9 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Team")
     void RegisterUnitToTeam(ACombatant_Base* Unit, int32 TeamNumber);
+
+    UFUNCTION(BlueprintCallable, Category = "Team")
+    void UnregisterUnitFromTeam(ACombatant_Base* Unit, int32 TeamNumber);
 
 protected:
 

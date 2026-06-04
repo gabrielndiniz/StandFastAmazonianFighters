@@ -97,6 +97,12 @@ FGridTileStaticData UBaseActionComponent::GetTileData(const bool bIsTarget)
 	}
 }
 
+void UBaseActionComponent::GetTileData(FGridTileStaticData& OutSourceData, FGridTileStaticData& OutTargetData) const
+{
+	OutSourceData = SourceTileData;
+	OutTargetData = TargetTileData;
+}
+
 bool UBaseActionComponent::SetLocationsForMeshes_Implementation()
 {
 	LocationsForMeshes.Empty();

@@ -47,6 +47,8 @@ ATacticalManager::ATacticalManager()
 	NeighborTile = CreateDefaultSubobject<UNeighborTile>(TEXT("NeighborTile"));
 	
 	ReachableTiles = CreateDefaultSubobject<UReachableTiles>(TEXT("ReachableTiles"));
+	
+	AddRemoveUnit = CreateDefaultSubobject<UAddRemoveUnit>(TEXT("AddRemoveUnit"));
 }
 
 // Called when the game starts or when spawned
@@ -102,6 +104,12 @@ void ATacticalManager::Initiate()
 		ReachableTiles->SetGrid(Grid);
 		ReachableTiles->SetReady(true);
 		ComponentMesh.Add(ReachableTiles, ReachableMesh);
+	}
+	
+	if (AddRemoveUnit && Grid)
+	{
+		AddRemoveUnit->SetGrid(Grid);
+		AddRemoveUnit->SetReady(true);
 	}
 }
 
@@ -232,15 +240,18 @@ void ATacticalManager::ExecuteAction(UBaseActionComponent* ActionComponent)
 	if (bChange)
 	{
 		UInstancedStaticMeshComponent** MeshPtr  = ComponentMesh.Find(ActionComponent);
-		if (UInstancedStaticMeshComponent* Mesh = *MeshPtr)
-		{			
-			Mesh->ClearInstances();
-			for (const FVector& Location : ActionComponent->GetLocationsForMeshes())
-			{
-				FTransform Transform = FTransform::Identity;
-				Transform.SetLocation(Location + FVector(0,0,ZOffset));
-				Mesh->AddInstance(Transform,true);
-			}					
+		if (MeshPtr)
+		{
+			if (UInstancedStaticMeshComponent* Mesh = *MeshPtr)
+			{			
+				Mesh->ClearInstances();
+				for (const FVector& Location : ActionComponent->GetLocationsForMeshes())
+				{
+					FTransform Transform = FTransform::Identity;
+					Transform.SetLocation(Location + FVector(0,0,ZOffset));
+					Mesh->AddInstance(Transform,true);
+				}					
+			}
 		}
 	}
 	if (SequencedActions.Contains(ActionComponent))
@@ -254,6 +265,17 @@ void ATacticalManager::SetConsiderFlying(bool bConsider)
 {
 	NeighborTile->SetConsiderFly(bConsider);
 	ReachableTiles->SetConsiderFly(bConsider);
+}
+
+void ATacticalManager::StartAddOrRemoveUnit(FGameplayTag InUnit, int32 InTeam, bool bInAdd, bool bInChangeTeam) const
+{
+	if (AddRemoveUnit)
+	{
+		AddRemoveUnit->CurrentUnit = InUnit;
+		AddRemoveUnit->Team = InTeam;
+		AddRemoveUnit->bAdd = bInAdd;
+		AddRemoveUnit->bChangeTeam = bInChangeTeam;
+	}
 }
 
 bool ATacticalManager::CalculateReachableTiles(
