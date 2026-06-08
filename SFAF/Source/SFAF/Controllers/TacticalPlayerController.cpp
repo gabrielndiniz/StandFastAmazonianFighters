@@ -47,6 +47,13 @@ void ATacticalPlayerController::SetTileUnderCursor() const
 			{
 				UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
 			}
+			if (bPathTileHover)
+			{
+				if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("PathTiles"), true))
+				{
+					UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
+				}				
+			}
 		}
 	}
 }
@@ -86,15 +93,34 @@ bool ATacticalPlayerController::SelectTile() const
 		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
 		return false;
 	}
-	if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("AddRemoveUnit"), false))
+	if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("ReachableTiles"), false))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
 		return false;
 	}
-	if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("AddRemoveUnit"), true))
+	if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("ReachableTiles"), true))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
 		return false;
+	}
+	if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("PathTiles"), false))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
+		return false;
+	}
+	
+	if (bUseAddRemoveUnit)
+	{
+		if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("AddRemoveUnit"), false))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
+			return false;
+		}
+		if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("AddRemoveUnit"), true))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
+			return false;
+		}
 	}
 	return true;
 }
@@ -124,6 +150,13 @@ bool ATacticalPlayerController::TargetTile() const
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
 		return false;
+	}
+	if (bPathTileTarget)
+	{
+		if (!TacticalControllerComponent->AddCoordToComponent(Coord, TEXT("PathTiles"), true))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("TacticalPlayerController: Failed to add coord to component"));
+		}	
 	}
 	return true;
 }

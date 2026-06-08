@@ -133,22 +133,8 @@ bool UGridPathfindingComponent::GetAllReachableCoords(
     TMap<FGridCoord, int32> CostSoFar;
     TArray<TPair<int32, FGridCoord>> OpenList;
 
-    auto Enqueue = [&](int32 Cost, FGridCoord C)
-    {
-        int32 InsertIndex = OpenList.Num();
-        for (int32 i = 0; i < OpenList.Num(); ++i)
-        {
-            if (Cost < OpenList[i].Key)
-            {
-                InsertIndex = i;
-                break;
-            }
-        }
-        OpenList.Insert(TPair<int32, FGridCoord>(Cost, C), InsertIndex);
-    };
-
     CostSoFar.Add(Coord, 0);
-    Enqueue(0, Coord);
+    OpenList.Emplace(0, Coord);
 
     for (FGridCoord TileCoord : RuntimeStateComponent->GetTilesByState(EGridTileStateType::Selected))
     {
@@ -156,46 +142,20 @@ bool UGridPathfindingComponent::GetAllReachableCoords(
     }
     RuntimeStateComponent->AddTileState(Coord, EGridTileStateType::Selected);
 
-    while (OpenList.Num() > 0)
+    auto GetNeighborsFunc = [&](const FGridCoord& CurrentCoord, TArray<FGridCoord>& OutNeighbors)
     {
-        TPair<int32, FGridCoord> Current = OpenList[0];
-        OpenList.RemoveAt(0);
+        GetNeighborsCoords(CurrentCoord, OutNeighbors, RuntimeStateComponent, bIsFlying);
+    };
 
-        const int32 CurrentCost = Current.Key;
-        const FGridCoord CurrentCoord = Current.Value;
-
-        if (TilesPaths.Contains(CurrentCoord)) continue;
-
-        FPathNode PathNode;
-        PathNode.Coord = CurrentCoord;
-        PathNode.CostSoFar = CurrentCost;
-        TilesPaths.Add(CurrentCoord, PathNode);
-
-        TArray<FGridCoord> NeighborsCoords;
-        GetNeighborsCoords(CurrentCoord, NeighborsCoords, RuntimeStateComponent, bIsFlying);
-
-        for (const FGridCoord& Neighbor : NeighborsCoords)
-        {
-            if (Neighbor == Coord) continue;
-            if (TilesPaths.Contains(Neighbor)) continue;
-
-            int32 NeighborEntryCost = 1;
-            if (TilePathfindMap.Contains(Neighbor))
-            {
-                NeighborEntryCost = TilePathfindMap[Neighbor].Cost;
-            }
-
-            const int32 NewCost = CurrentCost + NeighborEntryCost;
-            if (NewCost > Points) continue;
-
-            const int32* ExistingCost = CostSoFar.Find(Neighbor);
-            if (!ExistingCost || NewCost < *ExistingCost)
-            {
-                CostSoFar.Add(Neighbor, NewCost);
-                Enqueue(NewCost, Neighbor);
-            }
-        }
-    }
+    UGridMathLibrary::ComputeReachableCoordsWhileLoop(
+        Coord,
+        Points,
+        OpenList,
+        CostSoFar,
+        TilesPaths,
+        TilePathfindMap,
+        GetNeighborsFunc
+    );
 
 
     for (FGridCoord ReachableCoord : ReachableCoords)
@@ -209,8 +169,158 @@ bool UGridPathfindingComponent::GetAllReachableCoords(
     ReachableCoords.Remove(Coord);
     
     TilesPaths.GetKeys(ReachableCoords);
+    CachedReachableCoords = ReachableCoords;
     
     return !ReachableCoords.IsEmpty();
+}
+
+bool UGridPathfindingComponent::GetPathCoords(const FGridCoord Source, const FGridCoord Target,
+    TArray<FGridCoord>& PathCoords,
+    TObjectPtr<UGridRuntimeStateComponent> RuntimeStateComponent)
+{
+    if (!RuntimeStateComponent)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("GetPathCoords: RuntimeStateComponent is null"));
+        return false;
+    }
+    if (!RuntimeStateComponent->HasTile(Source))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("GetPathCoords: Source (%d,%d) has no tile"), Source.X, Source.Y);
+        return false;
+    }
+    if (!RuntimeStateComponent->HasTile(Target))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("GetPathCoords: Target (%d,%d) has no tile"), Target.X, Target.Y);
+        return false;
+    }
+    if (!CachedReachableCoords.Contains(Target))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("GetPathCoords: Target (%d,%d) not in CachedReachableCoords (%d tiles)"), Target.X, Target.Y, CachedReachableCoords.Num());
+        return false;
+    }
+
+   
+    struct FPathSearchNode
+    {
+        int32 TotalCost;
+        int32 HopCount;
+        int32 LinearityPenalty;
+        FGridCoord Coord;
+
+        bool operator<(const FPathSearchNode& Other) const
+        {
+            if (TotalCost != Other.TotalCost) return TotalCost < Other.TotalCost;
+            if (HopCount != Other.HopCount) return HopCount < Other.HopCount;
+            return LinearityPenalty < Other.LinearityPenalty;
+        }
+    };
+
+    TMap<FGridCoord, int32> GScore;
+    TMap<FGridCoord, int32> Hops;
+    TMap<FGridCoord, FGridCoord> CameFrom;
+    TArray<FPathSearchNode> OpenList;
+
+    auto Push = [&](const FPathSearchNode& Node)
+    {
+        int32 InsertIndex = OpenList.Num();
+        for (int32 i = 0; i < OpenList.Num(); ++i)
+        {
+            if (Node < OpenList[i])
+            {
+                InsertIndex = i;
+                break;
+            }
+        }
+        OpenList.Insert(Node, InsertIndex);
+    };
+
+    auto Pop = [&]() -> FPathSearchNode
+    {
+        FPathSearchNode Node = OpenList[0];
+        OpenList.RemoveAt(0);
+        return Node;
+    };
+
+    GScore.Add(Source, 0);
+    Hops.Add(Source, 0);
+    Push({UGridMathLibrary::GetHexDistance(Source, Target), 0, 0, Source});
+
+    while (OpenList.Num() > 0)
+    {
+        FPathSearchNode Current = Pop();
+        const FGridCoord CurrentCoord = Current.Coord;
+
+       
+        if (CurrentCoord == Target)
+        {
+            PathCoords.Empty();
+            FGridCoord PathTile = Target;
+            while (PathTile != Source)
+            {
+                PathCoords.Insert(PathTile, 0);
+                PathTile = CameFrom[PathTile];
+            }
+            PathCoords.Insert(Source, 0);
+
+            return true;
+        }
+
+        TArray<FGridCoord> NeighborsCoords;
+        GetNeighborsCoords(CurrentCoord, NeighborsCoords, RuntimeStateComponent, bLastIsFlying);
+
+        if (NeighborsCoords.IsEmpty())
+        {
+            UE_LOG(LogTemp, Verbose, TEXT("GetPathCoords: No neighbors for (%d,%d)"), CurrentCoord.X, CurrentCoord.Y);
+        }
+
+        for (const FGridCoord& Neighbor : NeighborsCoords)
+        {
+            if (Neighbor == Source)
+            {
+                continue;
+            }
+            if (!CachedReachableCoords.Contains(Neighbor) && Neighbor != Target)
+            {
+                continue;
+            }
+
+            int32 StepCost = 1;
+            if (TilePathfindMap.Contains(Neighbor))
+            {
+                StepCost = TilePathfindMap[Neighbor].Cost;
+            }
+
+            const int32 NewG = GScore[CurrentCoord] + StepCost;
+            const int32* ExistingG = GScore.Find(Neighbor);
+
+            if (!ExistingG || NewG < *ExistingG)
+            {
+                CameFrom.Add(Neighbor, CurrentCoord);
+                GScore.Add(Neighbor, NewG);
+                Hops.Add(Neighbor, Hops[CurrentCoord] + 1);
+
+                const int32 Heuristic = UGridMathLibrary::GetHexDistance(Neighbor, Target);
+                const int32 Linearity = UGridMathLibrary::GetLinearityPenalty(Source, Target, Neighbor);
+
+                
+                Push({
+                    NewG + Heuristic,
+                    Hops[Neighbor],
+                    Linearity,
+                    Neighbor
+                });
+            }
+            else
+            {
+                UE_LOG(LogTemp, VeryVerbose, TEXT("GetPathCoords: Skipping (%d,%d) - not better path (NewG=%d >= Existing=%d)"),
+                    Neighbor.X, Neighbor.Y, NewG, *ExistingG);
+            }
+        }
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("GetPathCoords: OpenList exhausted - no path from (%d,%d) to (%d,%d)"),
+        Source.X, Source.Y, Target.X, Target.Y);
+    return false;
 }
 
 

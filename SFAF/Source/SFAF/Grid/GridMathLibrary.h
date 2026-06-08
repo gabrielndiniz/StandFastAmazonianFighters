@@ -8,6 +8,49 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "GridMathLibrary.generated.h"
 
+/** Cached pathfinding data for a single tile (neighbors and movement cost) */
+USTRUCT()
+struct FTilePathfindData
+{
+    GENERATED_BODY()
+
+    /** List of neighbor coordinates */
+    TArray<FGridCoord> Neighbors;
+
+    /** Movement cost to enter this tile */
+    int32 Cost = 1;
+
+    /** Whether only flying units can occupy this tile */
+    bool bFlyOnly = false;
+};
+
+/** Internal node used by the A* pathfinding algorithm */
+struct FPathNode
+{
+    /** Grid coordinate this node represents */
+    FGridCoord Coord;
+
+    /** Accumulated cost from the start node */
+    int CostSoFar = 0;
+
+    /** Estimated remaining cost to the goal (heuristic) */
+    int Heuristic = 0;
+
+    /** Sum of CostSoFar + Heuristic */
+    int TotalCost = 0;
+
+    /** Whether this node has already been evaluated */
+    bool IsClosed = false;
+
+    /** Pointer to the predecessor node for reconstructing the path */
+    TSharedPtr<FPathNode> Parent = nullptr;
+
+    /** Comparison operator for the priority queue (lower TotalCost = higher priority) */
+    bool operator<(const FPathNode& Other) const {
+        return TotalCost < Other.TotalCost;
+    }
+};
+
 UCLASS()
 class SFAF_API UGridMathLibrary : public UBlueprintFunctionLibrary
 {
@@ -106,6 +149,32 @@ public:
     /** Returns true if both coordinates share the same row (same Y) */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static bool IsInTheSameLine(FGridCoord Coord1, FGridCoord Coord2);
+
+    /** Returns the hex grid distance between two coordinates (admissible heuristic for A*) */
+    UFUNCTION(BlueprintCallable, Category = "Grid")
+    static int32 GetHexDistance(const FGridCoord& A, const FGridCoord& B);
+
+    /**
+     * Returns a linearity penalty for a tile relative to the Source->Target line.
+     * Lower values mean the tile is closer to the direct line (more linear path).
+     */
+    UFUNCTION(BlueprintCallable, Category = "Grid")
+    static int32 GetLinearityPenalty(const FGridCoord& Source, const FGridCoord& Target, const FGridCoord& Tile);
+
+    /**
+     * BFS expansion loop for reachable coordinate computation.
+     * Processes the OpenList, expanding neighbors via GetNeighborsFunc,
+     * tracking visited nodes in TilesPaths, and respecting the movement budget.
+     */
+    static void ComputeReachableCoordsWhileLoop(
+        const FGridCoord& StartCoord,
+        int32 MaxPoints,
+        TArray<TPair<int32, FGridCoord>>& OpenList,
+        TMap<FGridCoord, int32>& CostSoFar,
+        TMap<FGridCoord, FPathNode>& TilesPaths,
+        const TMap<FGridCoord, FTilePathfindData>& TilePathfindMap,
+        const TFunction<void(const FGridCoord&, TArray<FGridCoord>&)>& GetNeighborsFunc
+    );
     
     /** Horizontal spacing multiplier between hex tiles (slight overlap adjustment) */
     static constexpr float HEX_HORIZONTAL_SPACING = 0.501f;

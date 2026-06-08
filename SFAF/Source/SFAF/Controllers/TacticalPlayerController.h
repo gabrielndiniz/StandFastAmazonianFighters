@@ -56,4 +56,40 @@ public:
 	/** Handles target confirmation on the currently selected tile */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	bool TargetTile() const;
+	
+	/** Whether AddCoordToComponent should be called inside SelectTile */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
+	mutable bool bUseAddRemoveUnit = false;
+	
+	/** Sets whether AddCoordToComponent should be used during tile selection */
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	void SetUseAddRemoveUnit(bool bIn) { bUseAddRemoveUnit = bIn; }
+	
+	/** Return whether AddCoordToComponent should be used during tile selection */
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	bool GetUseAddRemoveUnit() { return bUseAddRemoveUnit; }	
+	
+	/** Whether AddCoordToComponent should be called inside SelectTile */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
+	mutable bool bPathTileHover = false;
+	
+	/** Sets whether AddCoordToComponent should be used during tile selection */
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	void SetPathTileHover(bool bIn) { bPathTileHover = bIn; }
+	
+	/** Return whether AddCoordToComponent should be used during tile selection */
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	bool GetPathTileHover() { return bPathTileHover; }
+	
+	/** Whether AddCoordToComponent should be called inside SelectTile */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
+	mutable bool bPathTileTarget = false;
+	
+	/** Sets whether AddCoordToComponent should be used during tile selection */
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	void SetPathTileTarget(bool bIn) { bPathTileTarget = bIn; }
+	
+	/** Return whether AddCoordToComponent should be used during tile selection */
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	bool GetPathTileTarget() { return bPathTileTarget; }
 };

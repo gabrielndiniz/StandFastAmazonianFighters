@@ -490,3 +490,13 @@ bool AGridType::GetReachableCoords(FGridCoord Coord, TArray<FGridCoord>& Reachab
 		GridRuntimeStateComponent);
 }
 
+bool AGridType::GetPathCoords(FGridCoord Source, FGridCoord Target, TArray<FGridCoord>& PathCoords)
+{
+	if (!GridRuntimeStateComponent || !GridPathFindingComponent) { return false; }
+	
+	return GridPathFindingComponent->GetPathCoords(
+		Source, 
+		Target, 
+		PathCoords,
+		GridRuntimeStateComponent);
+}

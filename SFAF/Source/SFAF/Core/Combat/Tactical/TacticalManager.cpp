@@ -10,7 +10,7 @@
 // Sets default values
 ATacticalManager::ATacticalManager()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	
 	
@@ -36,6 +36,9 @@ ATacticalManager::ATacticalManager()
 	ReachableMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("ReachableMesh"));
 	ReachableMesh->SetupAttachment(SceneRoot);
 	
+	PathMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("PathMesh"));
+	PathMesh->SetupAttachment(SceneRoot);
+	
 	//Action Components construct
 	
 	HoverTile = CreateDefaultSubobject<UHoverTile>(TEXT("HoverTile"));
@@ -49,6 +52,8 @@ ATacticalManager::ATacticalManager()
 	ReachableTiles = CreateDefaultSubobject<UReachableTiles>(TEXT("ReachableTiles"));
 	
 	AddRemoveUnit = CreateDefaultSubobject<UAddRemoveUnit>(TEXT("AddRemoveUnit"));
+	
+	PathTiles = CreateDefaultSubobject<UPathTiles>(TEXT("PathTiles"));
 }
 
 // Called when the game starts or when spawned
@@ -67,7 +72,10 @@ void ATacticalManager::Tick(float DeltaTime)
 
     ExecuteAction(HoverTile);
 
-	
+	if (bScanPath)
+	{
+		ExecuteAction(PathTiles);
+	}
 }
 
 void ATacticalManager::Initiate()
@@ -110,6 +118,13 @@ void ATacticalManager::Initiate()
 	{
 		AddRemoveUnit->SetGrid(Grid);
 		AddRemoveUnit->SetReady(true);
+	}
+	
+	if (PathTiles && Grid && PathMesh)
+	{
+		PathTiles->SetGrid(Grid);
+		PathTiles->SetReady(true);
+		ComponentMesh.Add(PathTiles, PathMesh);
 	}
 }
 
@@ -183,7 +198,7 @@ void ATacticalManager::ExecuteAction(UBaseActionComponent* ActionComponent)
 {
 	if (!ActionComponent)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No %s found."),  *GetNameSafe(ActionComponent))
+		UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No %s found."),  *GetNameSafe(ActionComponent));
 		return;
 	}
 	bool bChange;
@@ -326,4 +341,78 @@ bool ATacticalManager::CalculateReachableTiles(
 	}
 
 	return !OutReachableTiles.IsEmpty();
+}
+
+bool ATacticalManager::CalculatePathTiles(TArray<FGridCoord>& OutPathTiles, TArray<FVector>& OutLocations,
+	bool bUseTarget)
+{
+	OutPathTiles.Empty();
+	OutLocations.Empty();
+	
+	if (!Grid || !Grid->GridRuntimeStateComponent)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculatePathTiles - Missing Grid or GridRuntimeStateComponent."));
+		return false;
+	}
+
+	if (!SelectTile)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculatePathTiles - Missing SelectTile."));
+		return false;
+	}
+
+	if (!HoverTile)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculatePathTiles - Missing HoverTile."));
+		return false;
+	}
+
+	if (!TargetTile)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculatePathTiles - Missing TargetTile."));
+		return false;
+	}
+
+	if (!ReachableTiles)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculatePathTiles - Missing ReachableTiles."));
+		return false;
+	}
+	
+	const FGridCoord& SourceCoord = SelectTile->GetCoord(false);
+	
+	const FGridCoord& TargetCoord = (bUseTarget) ? 
+	TargetTile->GetCoord(false) : 
+	HoverTile->GetCoord(false);
+
+	PathTiles->Execute(SourceCoord, true, TargetCoord);
+	
+	OutPathTiles = PathTiles->GetPathTiles();
+		
+	OutLocations = PathTiles->GetLocationsForMeshes();
+	
+	if (PathMesh)
+	{
+		PathMesh->ClearInstances();
+
+		for (const FVector& Location : OutLocations)
+		{
+			FTransform Transform = FTransform::Identity;
+			Transform.SetLocation(Location);
+			PathMesh->AddInstance(Transform, true);
+		}
+	}
+	
+	
+	return !OutPathTiles.IsEmpty();
+}
+
+void ATacticalManager::SetScanPath(bool bNewScanPath)
+{
+	bScanPath = bNewScanPath;
+}
+
+bool ATacticalManager::GetScanPath() const
+{
+	return bScanPath;
 }

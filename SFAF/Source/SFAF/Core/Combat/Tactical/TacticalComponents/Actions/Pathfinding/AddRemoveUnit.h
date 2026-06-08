@@ -39,11 +39,11 @@ public:
 	
 	/** Choose Between add or remove the unit */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Combat")
-	bool bAdd;
+	bool bAdd = false;
 	
 	/** Change execution to change team */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Combat")
-	bool bChangeTeam;
+	bool bChangeTeam = false;
 	
 	/** Change execution to change team */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Combat")

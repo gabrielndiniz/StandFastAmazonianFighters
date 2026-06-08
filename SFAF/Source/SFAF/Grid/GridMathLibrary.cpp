@@ -213,3 +213,84 @@ bool UGridMathLibrary::IsInTheSameLine(FGridCoord Coord1, FGridCoord Coord2)
     
     return false;
 }
+
+int32 UGridMathLibrary::GetHexDistance(const FGridCoord& A, const FGridCoord& B)
+{
+    return FMath::Abs(A.X - B.X) + FMath::Abs(A.Y - B.Y);
+}
+
+int32 UGridMathLibrary::GetLinearityPenalty(const FGridCoord& Source, const FGridCoord& Target, const FGridCoord& Tile)
+{
+    const int32 Dx = Target.X - Source.X;
+    const int32 Dy = Target.Y - Source.Y;
+    const int32 Tx = Tile.X - Source.X;
+    const int32 Ty = Tile.Y - Source.Y;
+
+    return FMath::Abs(Dx * Ty - Dy * Tx);
+}
+
+void UGridMathLibrary::ComputeReachableCoordsWhileLoop(
+    const FGridCoord& StartCoord,
+    int32 MaxPoints,
+    TArray<TPair<int32, FGridCoord>>& OpenList,
+    TMap<FGridCoord, int32>& CostSoFar,
+    TMap<FGridCoord, FPathNode>& TilesPaths,
+    const TMap<FGridCoord, FTilePathfindData>& TilePathfindMap,
+    const TFunction<void(const FGridCoord&, TArray<FGridCoord>&)>& GetNeighborsFunc
+)
+{
+    auto Enqueue = [&](int32 Cost, FGridCoord C)
+    {
+        int32 InsertIndex = OpenList.Num();
+        for (int32 i = 0; i < OpenList.Num(); ++i)
+        {
+            if (Cost < OpenList[i].Key)
+            {
+                InsertIndex = i;
+                break;
+            }
+        }
+        OpenList.Insert(TPair<int32, FGridCoord>(Cost, C), InsertIndex);
+    };
+
+    while (OpenList.Num() > 0)
+    {
+        TPair<int32, FGridCoord> Current = OpenList[0];
+        OpenList.RemoveAt(0);
+
+        const int32 CurrentCost = Current.Key;
+        const FGridCoord CurrentCoord = Current.Value;
+
+        if (TilesPaths.Contains(CurrentCoord)) continue;
+
+        FPathNode PathNode;
+        PathNode.Coord = CurrentCoord;
+        PathNode.CostSoFar = CurrentCost;
+        TilesPaths.Add(CurrentCoord, PathNode);
+
+        TArray<FGridCoord> NeighborsCoords;
+        GetNeighborsFunc(CurrentCoord, NeighborsCoords);
+
+        for (const FGridCoord& Neighbor : NeighborsCoords)
+        {
+            if (Neighbor == StartCoord) continue;
+            if (TilesPaths.Contains(Neighbor)) continue;
+
+            int32 NeighborEntryCost = 1;
+            if (TilePathfindMap.Contains(Neighbor))
+            {
+                NeighborEntryCost = TilePathfindMap[Neighbor].Cost;
+            }
+
+            const int32 NewCost = CurrentCost + NeighborEntryCost;
+            if (NewCost > MaxPoints) continue;
+
+            const int32* ExistingCost = CostSoFar.Find(Neighbor);
+            if (!ExistingCost || NewCost < *ExistingCost)
+            {
+                CostSoFar.Add(Neighbor, NewCost);
+                Enqueue(NewCost, Neighbor);
+            }
+        }
+    }
+}

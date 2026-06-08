@@ -14,6 +14,7 @@
 #include "TacticalComponents/Actions/Interface/TargetTile.h"
 #include "TacticalComponents/Actions/Pathfinding/AddRemoveUnit.h"
 #include "TacticalComponents/Actions/Pathfinding/NeighborTile.h"
+#include "TacticalComponents/Actions/Pathfinding/PathTiles.h"
 #include "TacticalComponents/Actions/Pathfinding/ReachableTiles.h"
 #include "TacticalManager.generated.h"
 /** Bundles references to a team's player controller, AI controller, and tactical component */
@@ -82,6 +83,10 @@ public:
 	/** Visual representation of the reachable Tiles*/
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	TObjectPtr<UInstancedStaticMeshComponent> ReachableMesh;
+	
+	/** Visual representation of the path Tiles*/
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
+	TObjectPtr<UInstancedStaticMeshComponent> PathMesh;
 	// -----------------------------------------------------------------------
 	// Runtime
 	// -----------------------------------------------------------------------
@@ -147,6 +152,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UAddRemoveUnit* AddRemoveUnit;
 	
+	/** Component handling path tile calculations */
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
+	UPathTiles* PathTiles;
+	
 	/** Mapping the Actions with their Static Meshes*/
 	UPROPERTY()
 	TMap<UBaseActionComponent*, UInstancedStaticMeshComponent*> ComponentMesh;	
@@ -158,6 +167,14 @@ public:
 	/** Mapping the Actions with sequences*/
 	UPROPERTY()
 	TMap<UBaseActionComponent*, UBaseActionComponent*> SequencedActions;
+	
+	/** Adjust on Z for instantiated meshes */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
+	float ZOffset = 0.01f;
+	
+	/** Getting ready to PathTiles*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
+    bool bScanPath = false;
 	
 	// -----------------------------------------------------------------------
 	// Actions - Functions
@@ -186,9 +203,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void StartAddOrRemoveUnit(FGameplayTag InUnit, int32 InTeam, bool bInAdd, bool bInChangeTeam) const;
 	
-	/** Adjust on Z for instantiated meshes */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
-	float ZOffset = 0.01f;
 
 	/**
 	 * Computes reachable tiles from the SelectTile's source coordinate within the specified movement budget,
@@ -210,5 +224,25 @@ public:
 		int32 MovementPoints,
 		bool bFlying,
 		TArray<FGridCoord>& OutReachableTiles, TArray<FVector>& OutLocations
+		);
+
+	/**
+	 * After ReachableTiles, find the current Path from a selected tile to a hovered tile or target tile.
+	 * 
+	 * @param OutPathTiles       The Path from the source to Target
+	 * @param OutLocations       World-space locations of the reachable tiles (used for mesh placement)
+	 * @return                   True if at least one reachable tile was found
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	bool CalculatePathTiles(
+		TArray<FGridCoord>& OutPathTiles, TArray<FVector>& OutLocations, bool bUseTarget
 	);
+	
+	/** Adjust ScanPath*/
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	void SetScanPath(bool bNewScanPath);
+	
+	/** Get ScanPath value*/
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	bool GetScanPath() const;
 };
