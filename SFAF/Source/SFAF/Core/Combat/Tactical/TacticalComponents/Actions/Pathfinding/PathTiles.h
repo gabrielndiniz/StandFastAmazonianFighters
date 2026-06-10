@@ -13,15 +13,12 @@ class SFAF_API UPathTiles : public UBaseActionComponent
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this component's properties
 	UPathTiles();
 
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 
 public:
-	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 	
@@ -31,8 +28,16 @@ public:
 	/** The path tiles coordinates */
 	UPROPERTY(BlueprintReadOnly, Category="Action")
 	TArray<FGridCoord> PathTiles;
+
+	/** Total movement cost of the computed path */
+	UPROPERTY(BlueprintReadOnly, Category = "Action")
+	int32 TotalCost;
 	
 	/** Returns the path tiles coordinates computed by this component */
 	UFUNCTION(BlueprintCallable, Category="Action")
 	TArray<FGridCoord> GetPathTiles();
+
+	/** Returns the total movement cost of the computed path */
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	int32 GetTotalCost() const;
 };

@@ -24,6 +24,8 @@ public:
 	virtual void BeginPlay() override;
 
 	virtual void Tick(float DeltaSeconds) override;
+
+	virtual void SetupInputComponent() override;
 	
 	
 	// -----------------------------------------------------------------------
@@ -92,4 +94,12 @@ public:
 	/** Return whether AddCoordToComponent should be used during tile selection */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	bool GetPathTileTarget() { return bPathTileTarget; }
+
+	/** Handles left-click input: enables path hover */
+	UFUNCTION(BlueprintCallable, Category = "Input")
+	void OnLeftClick();
+
+	/** Handles right-click input: cancels path hover and related states */
+	UFUNCTION(BlueprintCallable, Category = "Input")
+	void OnRightClick();
 };

@@ -195,7 +195,7 @@ bool UGridPathfindingComponent::GetPathCoords(const FGridCoord Source, const FGr
     }
     if (!CachedReachableCoords.Contains(Target))
     {
-        UE_LOG(LogTemp, Warning, TEXT("GetPathCoords: Target (%d,%d) not in CachedReachableCoords (%d tiles)"), Target.X, Target.Y, CachedReachableCoords.Num());
+        UE_LOG(LogTemp, Verbose, TEXT("GetPathCoords: Target (%d,%d) not in CachedReachableCoords (%d tiles)"), Target.X, Target.Y, CachedReachableCoords.Num());
         return false;
     }
 

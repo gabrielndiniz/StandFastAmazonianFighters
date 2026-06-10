@@ -229,6 +229,65 @@ int32 UGridMathLibrary::GetLinearityPenalty(const FGridCoord& Source, const FGri
     return FMath::Abs(Dx * Ty - Dy * Tx);
 }
 
+TArray<FGridCoord> UGridMathLibrary::SortPathTiles(
+    const FGridCoord& Source,
+    const FGridCoord& Target,
+    const TArray<FGridCoord>& InPath,
+    UGridRuntimeStateComponent* RuntimeState)
+{
+    if (InPath.Num() <= 1) return InPath;
+
+    TArray<FGridCoord> Sorted;
+    TSet<FGridCoord> Remaining(InPath);
+    FGridCoord Current = Source;
+
+    Remaining.Remove(Source);
+    Sorted.Add(Source);
+
+    while (Current != Target && Remaining.Num() > 0)
+    {
+        TArray<FGridCoord> Neighbors;
+        GetHexNeighborTiles(Current, Neighbors);
+
+        bool bFound = false;
+        for (const FGridCoord& N : Neighbors)
+        {
+            if (Remaining.Contains(N))
+            {
+                Current = N;
+                Remaining.Remove(N);
+                Sorted.Add(N);
+                bFound = true;
+                break;
+            }
+        }
+
+        if (!bFound) break;
+    }
+
+    return Sorted;
+}
+
+int32 UGridMathLibrary::GetTileMovementCost(
+    UGridRuntimeStateComponent* RuntimeState, const FGridCoord& Coord)
+{
+    if (!RuntimeState) return 1;
+    int32 Cost = 1;
+    RuntimeState->GetTileCost(Coord, Cost);
+    return Cost;
+}
+
+int32 UGridMathLibrary::GetPathMovementCost(
+    UGridRuntimeStateComponent* RuntimeState, const TArray<FGridCoord>& InPath)
+{
+    int32 Total = 0;
+    for (int32 i = 1; i < InPath.Num(); ++i)
+    {
+        Total += GetTileMovementCost(RuntimeState, InPath[i]);
+    }
+    return Total;
+}
+
 void UGridMathLibrary::ComputeReachableCoordsWhileLoop(
     const FGridCoord& StartCoord,
     int32 MaxPoints,

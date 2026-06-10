@@ -176,6 +176,22 @@ public:
         const TFunction<void(const FGridCoord&, TArray<FGridCoord>&)>& GetNeighborsFunc
     );
     
+    /** Sorts an unsorted path tile array from Source to Target using neighbor traversal */
+    static TArray<FGridCoord> SortPathTiles(
+        const FGridCoord& Source,
+        const FGridCoord& Target,
+        const TArray<FGridCoord>& InPath,
+        UGridRuntimeStateComponent* RuntimeState
+    );
+
+    /** Returns the movement cost to enter a single tile (reads from runtime state) */
+    UFUNCTION(BlueprintCallable, Category = "Grid")
+    static int32 GetTileMovementCost(UGridRuntimeStateComponent* RuntimeState, const FGridCoord& Coord);
+
+    /** Returns the total movement cost of a path (skips the first tile / source) */
+    UFUNCTION(BlueprintCallable, Category = "Grid")
+    static int32 GetPathMovementCost(UGridRuntimeStateComponent* RuntimeState, const TArray<FGridCoord>& InPath);
+
     /** Horizontal spacing multiplier between hex tiles (slight overlap adjustment) */
     static constexpr float HEX_HORIZONTAL_SPACING = 0.501f;
 

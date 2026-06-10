@@ -32,19 +32,47 @@ bool UAddRemoveUnit::Execute_Implementation(const FGridCoord& InSourceCoord, boo
 
 void UAddRemoveUnit::AddUnit(FGridCoord Coord)
 {
-	if (!CombatantDatabase || !Grid || !GetWorld())
+	if (!CombatantDatabase)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AddRemoveUnit::AddUnit — CombatantDatabase is null"));
 		return;
+	}
+	if (!Grid)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AddRemoveUnit::AddUnit — Grid is null"));
+		return;
+	}
+	if (!GetWorld())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AddRemoveUnit::AddUnit — GetWorld() is null"));
+		return;
+	}
 
 	FCombatantData CombatantData;
-	if (!CombatantDatabase->GetCombatantData(CurrentUnit, CombatantData) || !CombatantData.CombatantClass)
+	if (!CombatantDatabase->GetCombatantData(CurrentUnit, CombatantData))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AddRemoveUnit::AddUnit — No data for tag %s"), *CurrentUnit.ToString());
 		return;
+	}
+	if (!CombatantData.CombatantClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AddRemoveUnit::AddUnit — CombatantClass is null for tag %s"), *CurrentUnit.ToString());
+		return;
+	}
 
 	FGridTileStaticData* TileStaticData = Grid->GetTileStaticData(Coord);
 	if (!TileStaticData)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AddRemoveUnit::AddUnit — No tile data at (%d,%d)"), Coord.X, Coord.Y);
 		return;
+	}
 	
 	if (TileStaticData->Occupancy.OccupyingUnit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AddRemoveUnit::AddUnit — Tile (%d,%d) already occupied by %s"),
+			Coord.X, Coord.Y, *GetNameSafe(TileStaticData->Occupancy.OccupyingUnit));
 		return;
+	}
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -57,11 +85,17 @@ void UAddRemoveUnit::AddUnit(FGridCoord Coord)
 	);
 
 	if (!SpawnedUnit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AddRemoveUnit::AddUnit — SpawnActor failed at location %s"),
+			*TileStaticData->WorldLocation.ToString());
 		return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("AddRemoveUnit::AddUnit — Spawned %s at (%d,%d)"), *SpawnedUnit->GetName(), Coord.X, Coord.Y);
 
 	FGridTileOccupancy Occupancy;
 	Occupancy.OccupyingUnit = SpawnedUnit;
 	TileStaticData->Occupancy = Occupancy;
+	UE_LOG(LogTemp, Warning, TEXT("AddRemoveUnit::AddUnit — Occupancy set for tile (%d,%d)"), Coord.X, Coord.Y);
 
 	ChangeUnitTeam(Coord);
 }

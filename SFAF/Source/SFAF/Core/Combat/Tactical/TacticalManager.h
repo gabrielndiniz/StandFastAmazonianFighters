@@ -16,6 +16,7 @@
 #include "TacticalComponents/Actions/Pathfinding/NeighborTile.h"
 #include "TacticalComponents/Actions/Pathfinding/PathTiles.h"
 #include "TacticalComponents/Actions/Pathfinding/ReachableTiles.h"
+#include "TacticalComponents/Actions/Combatant/MoveCombatant.h"
 #include "TacticalManager.generated.h"
 /** Bundles references to a team's player controller, AI controller, and tactical component */
 USTRUCT(BlueprintType)
@@ -27,12 +28,15 @@ struct FControllers
 	bool bIsPlayer = false;
 	
 	/** Player controller for human-controlled teams */
+	UPROPERTY()
 	ATacticalPlayerController* PlayerController = nullptr;
 	
 	/** AI controller for AI-controlled teams */
+	UPROPERTY()
 	ATacticalAIController* AIController = nullptr;
 	
 	/** Shared tactical controller component for action management */
+	UPROPERTY()
 	UTacticalControllerComponent* ControllerComponent = nullptr;
 };
 
@@ -155,6 +159,10 @@ public:
 	/** Component handling path tile calculations */
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UPathTiles* PathTiles;
+
+	/** Component handling combatant movement execution */
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
+	UMoveCombatant* MoveCombatant;
 	
 	/** Mapping the Actions with their Static Meshes*/
 	UPROPERTY()
@@ -175,6 +183,13 @@ public:
 	/** Getting ready to PathTiles*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
     bool bScanPath = false;
+
+	/** Whether to use target tile for path calculation */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
+	bool bUseTarget = false;
+
+	/** True while a movement action is in progress; blocks other actions */
+	bool bIsExecutingAbility = false;
 	
 	// -----------------------------------------------------------------------
 	// Actions - Functions
@@ -235,7 +250,7 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	bool CalculatePathTiles(
-		TArray<FGridCoord>& OutPathTiles, TArray<FVector>& OutLocations, bool bUseTarget
+		TArray<FGridCoord>& OutPathTiles, TArray<FVector>& OutLocations
 	);
 	
 	/** Adjust ScanPath*/
@@ -245,4 +260,36 @@ public:
 	/** Get ScanPath value*/
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	bool GetScanPath() const;
+
+	/** Adjust UseTarget*/
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	void SetUseTarget(bool bNewUseTarget);
+
+	/** Get UseTarget value*/
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	bool GetUseTarget() const;
+		
+	/** Execute the add or remove unit */
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	bool ApplyAddRemoveUnit();
+
+	/** Move unit */
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	bool AbilityMoveUnit();
+
+	/** 
+	 * Populates TeamsControllers for teams 0-7. 
+	 * Each int32 in PlayerTeams marks that team as player-controlled (TacticalPlayerController).
+	 * Teams 0-7 not in the array become AI-controlled (TacticalAIController).
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Setup")
+	void SetupTeams(const TArray<int32>& PlayerTeams);
+
+	/** Sets the per-tile movement duration on the MoveCombatant component */
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	void SetMoveDuration(float NewDuration);
+
+	/** Called when a MoveCombatant movement finishes */
+	UFUNCTION()
+	void OnMoveComplete();
 };

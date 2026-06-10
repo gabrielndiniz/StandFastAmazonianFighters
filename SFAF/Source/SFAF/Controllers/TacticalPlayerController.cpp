@@ -6,6 +6,7 @@
 #include "Grid/GridType.h"
 #include "Kismet/GameplayStatics.h"
 
+
 ATacticalPlayerController::ATacticalPlayerController()
 {
 	TacticalControllerComponent = CreateDefaultSubobject<UTacticalControllerComponent>(TEXT("TacticalControllerComponent"));
@@ -159,4 +160,23 @@ bool ATacticalPlayerController::TargetTile() const
 		}	
 	}
 	return true;
+}
+
+void ATacticalPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	InputComponent->BindKey(EKeys::LeftMouseButton, IE_Released, this, &ATacticalPlayerController::OnLeftClick);
+	InputComponent->BindKey(EKeys::RightMouseButton, IE_Released, this, &ATacticalPlayerController::OnRightClick);
+}
+
+void ATacticalPlayerController::OnLeftClick()
+{
+	bPathTileHover = true;
+	UE_LOG(LogTemp, Verbose, TEXT("TacticalPlayerController::OnLeftClick — bPathTileHover set to true"));
+}
+
+void ATacticalPlayerController::OnRightClick()
+{
+	bPathTileHover = false;
+	UE_LOG(LogTemp, Verbose, TEXT("TacticalPlayerController::OnRightClick — bPathTileHover set to false"));
 }

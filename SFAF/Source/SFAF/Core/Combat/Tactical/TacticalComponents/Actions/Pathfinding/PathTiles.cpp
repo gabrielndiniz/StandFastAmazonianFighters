@@ -2,41 +2,30 @@
 
 
 #include "PathTiles.h"
+#include "Grid/GridMathLibrary.h"
+#include "Grid/GridRuntimeStateComponent.h"
 
 
-// Sets default values for this component's properties
 UPathTiles::UPathTiles()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
 }
 
-
-// Called when the game starts
 void UPathTiles::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
-	
 }
 
-
-// Called every frame
 void UPathTiles::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
 }
 
 bool UPathTiles::SetLocationsForMeshes_Implementation()
 {
 	LocationsForMeshes.Empty();	
 	PathTiles.Empty();
+	TotalCost = 0;
 		
 	if (!Grid)
 	{
@@ -44,16 +33,19 @@ bool UPathTiles::SetLocationsForMeshes_Implementation()
 		return false;
 	}
 	
-	
 	Grid->GetPathCoords(SourceCoord, TargetCoord, PathTiles);
+	
+	if (Grid->GridRuntimeStateComponent)
+	{
+		TotalCost = UGridMathLibrary::GetPathMovementCost(Grid->GridRuntimeStateComponent, PathTiles);
+	}
 	
 	for (FGridCoord PathTile : PathTiles)
 	{
-	
 		FGridTileStaticData* TileStaticData = Grid->GetTileStaticData(PathTile);
 		LocationsForMeshes.Add(TileStaticData->WorldLocation);
 	}
-	UE_LOG(LogTemp, Warning, TEXT("PathTile finish getting coords"));
+
 
 	return !LocationsForMeshes.IsEmpty();
 }
@@ -63,3 +55,7 @@ TArray<FGridCoord> UPathTiles::GetPathTiles()
 	return PathTiles;
 }
 
+int32 UPathTiles::GetTotalCost() const
+{
+	return TotalCost;
+}

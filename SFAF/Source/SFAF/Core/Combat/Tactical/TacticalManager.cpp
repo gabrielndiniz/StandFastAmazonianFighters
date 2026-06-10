@@ -5,6 +5,8 @@
 
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Grid/GridType.h"
+#include "Grid/GridMathLibrary.h"
+#include "Grid/GridRuntimeStateComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -54,6 +56,8 @@ ATacticalManager::ATacticalManager()
 	AddRemoveUnit = CreateDefaultSubobject<UAddRemoveUnit>(TEXT("AddRemoveUnit"));
 	
 	PathTiles = CreateDefaultSubobject<UPathTiles>(TEXT("PathTiles"));
+
+	MoveCombatant = CreateDefaultSubobject<UMoveCombatant>(TEXT("MoveCombatant"));
 }
 
 // Called when the game starts or when spawned
@@ -126,6 +130,12 @@ void ATacticalManager::Initiate()
 		PathTiles->SetReady(true);
 		ComponentMesh.Add(PathTiles, PathMesh);
 	}
+
+	if (MoveCombatant && Grid)
+	{
+		MoveCombatant->SetGrid(Grid);
+		MoveCombatant->SetReady(true);
+	}
 }
 
 void ATacticalManager::SetGrid(AGridType* GridType)
@@ -196,6 +206,11 @@ void ATacticalManager::SetCurrentMovementPoints(int32 Points)
 
 void ATacticalManager::ExecuteAction(UBaseActionComponent* ActionComponent)
 {
+	if (bIsExecutingAbility)
+	{
+		return;
+	}
+
 	if (!ActionComponent)
 	{
 		UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No %s found."),  *GetNameSafe(ActionComponent));
@@ -343,8 +358,7 @@ bool ATacticalManager::CalculateReachableTiles(
 	return !OutReachableTiles.IsEmpty();
 }
 
-bool ATacticalManager::CalculatePathTiles(TArray<FGridCoord>& OutPathTiles, TArray<FVector>& OutLocations,
-	bool bUseTarget)
+bool ATacticalManager::CalculatePathTiles(TArray<FGridCoord>& OutPathTiles, TArray<FVector>& OutLocations)
 {
 	OutPathTiles.Empty();
 	OutLocations.Empty();
@@ -409,10 +423,167 @@ bool ATacticalManager::CalculatePathTiles(TArray<FGridCoord>& OutPathTiles, TArr
 
 void ATacticalManager::SetScanPath(bool bNewScanPath)
 {
+	FGridCoord Coord;
+	TargetTile->Execute(Coord,false,Coord);
 	bScanPath = bNewScanPath;
 }
 
 bool ATacticalManager::GetScanPath() const
 {
 	return bScanPath;
+}
+
+void ATacticalManager::SetUseTarget(bool bNewUseTarget)
+{
+	bUseTarget = bNewUseTarget;
+}
+
+bool ATacticalManager::GetUseTarget() const
+{
+	return bUseTarget;
+}
+
+bool ATacticalManager::ApplyAddRemoveUnit()
+{
+	if (!SelectTile) { return false; }
+	
+	return AddRemoveUnit->Execute(SelectTile->GetCoord(false), true, SelectTile->GetCoord(false));
+	
+}
+
+bool ATacticalManager::AbilityMoveUnit()
+{
+	UE_LOG(LogTemp, Warning, TEXT("AbilityMoveUnit — Called"));
+
+	if (!Grid)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AbilityMoveUnit — Grid is null"));
+		return false;
+	}
+	if (!Grid->GridRuntimeStateComponent)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AbilityMoveUnit — GridRuntimeStateComponent is null"));
+		return false;
+	}
+	if (!MoveCombatant)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AbilityMoveUnit — MoveCombatant is null"));
+		return false;
+	}
+	if (!SelectTile)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AbilityMoveUnit — SelectTile is null"));
+		return false;
+	}
+	if (!TargetTile)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AbilityMoveUnit — TargetTile is null"));
+		return false;
+	}
+	if (!PathTiles)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AbilityMoveUnit — PathTiles is null"));
+		return false;
+	}
+
+	if (!SelectTile->GetTileData(false).Occupancy.OccupyingUnit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AbilityMoveUnit — No unit on SelectTile"));
+		return false;
+	}
+
+	if (TargetTile->GetTileData(false).Occupancy.OccupyingUnit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AbilityMoveUnit — TargetTile already occupied"));
+		return false;
+	}
+
+	TArray<FGridCoord> RawPath = PathTiles->GetPathTiles();
+	if (RawPath.Num() < 1)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AbilityMoveUnit — PathTiles is empty"));
+		return false;
+	}
+
+	FGridCoord SourceCoord = SelectTile->GetCoord(false);
+	FGridCoord TargetCoord = TargetTile->GetCoord(false);
+
+	UE_LOG(LogTemp, Warning, TEXT("AbilityMoveUnit — Source(%d,%d) → Target(%d,%d). Raw path has %d tiles."),
+		SourceCoord.X, SourceCoord.Y, TargetCoord.X, TargetCoord.Y, RawPath.Num());
+
+	TArray<FGridCoord> SortedPath = UGridMathLibrary::SortPathTiles(
+		SourceCoord,
+		TargetCoord,
+		RawPath,
+		Grid->GridRuntimeStateComponent
+	);
+
+	UE_LOG(LogTemp, Warning, TEXT("AbilityMoveUnit — Sorted path has %d tiles."), SortedPath.Num());
+
+	MoveCombatant->SetMovePath(SortedPath);
+
+	bIsExecutingAbility = true;
+
+	MoveCombatant->OnMoveComplete.Clear();
+	MoveCombatant->OnMoveComplete.AddDynamic(this, &ATacticalManager::OnMoveComplete);
+
+	bool bResult = MoveCombatant->Execute(SourceCoord, true, TargetCoord);
+	UE_LOG(LogTemp, Warning, TEXT("AbilityMoveUnit — MoveCombatant->Execute returned %s"), bResult ? TEXT("true") : TEXT("false"));
+
+	if (!bResult)
+	{
+		bIsExecutingAbility = false;
+	}
+
+	return bResult;
+}
+
+void ATacticalManager::SetupTeams(const TArray<int32>& PlayerTeams)
+{
+	TeamsControllers.Empty();
+
+	for (int32 Team = 0; Team <= 7; ++Team)
+	{
+		FControllers Controllers;
+
+		if (PlayerTeams.Contains(Team))
+		{
+			Controllers.bIsPlayer = true;
+			ATacticalPlayerController* PC = Cast<ATacticalPlayerController>(
+				UGameplayStatics::GetPlayerController(GetWorld(), 0));
+			if (PC)
+			{
+				Controllers.PlayerController = PC;
+				Controllers.ControllerComponent = PC->TacticalControllerComponent;
+			}
+		}
+		else
+		{
+			Controllers.bIsPlayer = false;
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			ATacticalAIController* AIC = GetWorld()->SpawnActor<ATacticalAIController>(SpawnParams);
+			if (AIC)
+			{
+				Controllers.AIController = AIC;
+				Controllers.ControllerComponent = AIC->TacticalControllerComponent;
+			}
+		}
+
+		TeamsControllers.Add(Team, Controllers);
+	}
+}
+
+void ATacticalManager::OnMoveComplete()
+{
+	bIsExecutingAbility = false;
+	UE_LOG(LogTemp, Warning, TEXT("TacticalManager::OnMoveComplete — Movement finished, actions unblocked"));
+}
+
+void ATacticalManager::SetMoveDuration(float NewDuration)
+{
+	if (MoveCombatant)
+	{
+		MoveCombatant->SetTileMoveDuration(NewDuration);
+	}
 }
