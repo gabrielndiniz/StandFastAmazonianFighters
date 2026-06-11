@@ -1,4 +1,4 @@
-// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// Copyright 2025 StandFast Games, LLC
 
 #pragma once
 
@@ -10,29 +10,31 @@
 class UTacticalControllerComponent;
 
 /**
- * 
+ * Player controller for tactical combat. Handles grid interaction via mouse input,
+ * determines which tile is under the cursor, and feeds coordinates to the
+ * TacticalControllerComponent for action processing.
  */
-/** Player controller for tactical combat. Handles grid interaction and input-driven actions. */
 UCLASS()
 class SFAF_API ATacticalPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 		
 public:
+	/** Default constructor */
 	ATacticalPlayerController();
 	
+	/** Initializes the controller when the game starts */
 	virtual void BeginPlay() override;
-
+	/** Updates the controller every frame */
 	virtual void Tick(float DeltaSeconds) override;
-
+	/** Sets up input bindings for the controller */
 	virtual void SetupInputComponent() override;
-	
 	
 	// -----------------------------------------------------------------------
 	// Components
 	// -----------------------------------------------------------------------
 
-	/** Component managing tactical actions (select, hover, target, pathfinding) */
+	/** Component managing tactical action coordination (hover, select, target, pathfinding) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UTacticalControllerComponent> TacticalControllerComponent;
 	
@@ -40,66 +42,66 @@ public:
 	// Data
 	// -----------------------------------------------------------------------
 	
-	/** Reference to the active grid actor */
+	/** Reference to the active grid actor for tile queries */
 	UPROPERTY()
 	AGridType* Grid;
-	
 	
 	// -----------------------------------------------------------------------
 	// Action
 	// -----------------------------------------------------------------------
-	/** Calculates which tile is currently under the mouse cursor and pushes it to the tactical component */
+
+	/** Traces under the cursor and pushes the hovered tile coordinates to the tactical component */
 	void SetTileUnderCursor() const;
 	
-	/** Handles tile selection logic, returns true if a valid tile was selected */
+	/** Selects the currently hovered tile and updates all related action components */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	bool SelectTile() const;
 	
-	/** Handles target confirmation on the currently selected tile */
+	/** Confirms the currently hovered tile as the target */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	bool TargetTile() const;
 	
-	/** Whether AddCoordToComponent should be called inside SelectTile */
+	/** When true, SelectTile also updates the AddRemoveUnit action component */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	mutable bool bUseAddRemoveUnit = false;
 	
-	/** Sets whether AddCoordToComponent should be used during tile selection */
+	/** Enables or disables AddRemoveUnit coordination during selection */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	void SetUseAddRemoveUnit(bool bIn) { bUseAddRemoveUnit = bIn; }
 	
-	/** Return whether AddCoordToComponent should be used during tile selection */
+	/** Returns whether AddRemoveUnit is coordinated during selection */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	bool GetUseAddRemoveUnit() { return bUseAddRemoveUnit; }	
 	
-	/** Whether AddCoordToComponent should be called inside SelectTile */
+	/** When true, SelectTile also updates the PathTiles target coordinate */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	mutable bool bPathTileHover = false;
 	
-	/** Sets whether AddCoordToComponent should be used during tile selection */
+	/** Enables or disables path tile hover coordination */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	void SetPathTileHover(bool bIn) { bPathTileHover = bIn; }
 	
-	/** Return whether AddCoordToComponent should be used during tile selection */
+	/** Returns whether path tile hover is active */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	bool GetPathTileHover() { return bPathTileHover; }
 	
-	/** Whether AddCoordToComponent should be called inside SelectTile */
+	/** When true, TargetTile also updates the PathTiles target coordinate */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	mutable bool bPathTileTarget = false;
 	
-	/** Sets whether AddCoordToComponent should be used during tile selection */
+	/** Enables or disables path tile target coordination */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	void SetPathTileTarget(bool bIn) { bPathTileTarget = bIn; }
 	
-	/** Return whether AddCoordToComponent should be used during tile selection */
+	/** Returns whether path tile target is active */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	bool GetPathTileTarget() { return bPathTileTarget; }
 
-	/** Handles left-click input: enables path hover */
+	/** Left-click handler: activates path hover mode */
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	void OnLeftClick();
 
-	/** Handles right-click input: cancels path hover and related states */
+	/** Right-click handler: deactivates path hover mode */
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	void OnRightClick();
 };

@@ -1,4 +1,4 @@
-// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// © 2026 Gabriel Nobile Diniz. All Rights Reserved.
 
 #pragma once
 
@@ -18,6 +18,7 @@
 #include "TacticalComponents/Actions/Pathfinding/ReachableTiles.h"
 #include "TacticalComponents/Actions/Combatant/MoveCombatant.h"
 #include "TacticalManager.generated.h"
+
 /** Bundles references to a team's player controller, AI controller, and tactical component */
 USTRUCT(BlueprintType)
 struct FControllers
@@ -27,40 +28,49 @@ struct FControllers
 	/** Whether this team is controlled by a human player */
 	bool bIsPlayer = false;
 	
-	/** Player controller for human-controlled teams */
+	/** The player controller for human-controlled teams */
 	UPROPERTY()
 	ATacticalPlayerController* PlayerController = nullptr;
 	
-	/** AI controller for AI-controlled teams */
+	/** The AI controller for AI-controlled teams */
 	UPROPERTY()
 	ATacticalAIController* AIController = nullptr;
 	
-	/** Shared tactical controller component for action management */
+	/** Shared tactical controller component managing action coordination */
 	UPROPERTY()
 	UTacticalControllerComponent* ControllerComponent = nullptr;
 };
 
-
+/**
+ * Central tactical manager that orchestrates grid-based combat actions.
+ * Manages team controller assignments, action components (hover, select, target,
+ * pathfinding, movement), and coordinates the execution of tactical abilities.
+ */
 UCLASS()
 class SFAF_API ATacticalManager : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
+	/**
+	 * Constructs the TacticalManager actor.
+	 */
 	ATacticalManager();
 
 protected:
-	// Called when the game starts or when spawned
+	/**
+	 * Initializes action components and registers meshes on game start.
+	 */
 	virtual void BeginPlay() override;
 	
-	
 public:	
-	// Called every frame
+	/**
+	 * Updates per-frame hover and pathfinding state.
+	 * @param DeltaTime Frame tick delta.
+	 */
 	virtual void Tick(float DeltaTime) override;
 
-	
-	/** Root scene component for the manager actor */
+	/** Root scene component */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Root")
 	TObjectPtr<USceneComponent> SceneRoot;
 	
@@ -68,34 +78,35 @@ public:
 	// Meshes
 	// -----------------------------------------------------------------------
 	
-	/** Visual representation of the Hovered Tile*/
+	/** Instanced mesh visualizing the currently hovered tile */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	TObjectPtr<UInstancedStaticMeshComponent> HoverMesh;
 	
-	/** Visual representation of the selected Tile*/
+	/** Instanced mesh visualizing the selected tile */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	TObjectPtr<UInstancedStaticMeshComponent> SelectMesh;
 		
-	/** Visual representation of the target Tile*/
+	/** Instanced mesh visualizing the target tile */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	TObjectPtr<UInstancedStaticMeshComponent> TargetMesh;
 	
-	/** Visual representation of the neighbor Tiles*/
+	/** Instanced mesh visualizing neighbor tiles */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	TObjectPtr<UInstancedStaticMeshComponent> NeighborMesh;
 	
-	/** Visual representation of the reachable Tiles*/
+	/** Instanced mesh visualizing reachable tiles */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	TObjectPtr<UInstancedStaticMeshComponent> ReachableMesh;
 	
-	/** Visual representation of the path Tiles*/
+	/** Instanced mesh visualizing the computed path tiles */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Action")
 	TObjectPtr<UInstancedStaticMeshComponent> PathMesh;
+
 	// -----------------------------------------------------------------------
 	// Runtime
 	// -----------------------------------------------------------------------
 	
-	/** Initializes the tactical manager, creating action components and registering meshes */
+	/** Initializes the tactical manager: finds the grid, creates action components, and registers meshes */
 	void Initiate();
 	
 	/** Assigns the grid actor to be managed */
@@ -106,7 +117,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Runtime")
 	AGridType* GetGrid();
 	
-	/** Reference to the active grid actor */
+	/** The active grid actor reference */
 	UPROPERTY(BlueprintReadOnly, Category="Runtime")
 	AGridType* Grid;
 		
@@ -114,8 +125,7 @@ public:
 	// Actions - Components
 	// -----------------------------------------------------------------------
 	
-	
-	/** Sets a specific controller as the debug controller for testing */
+	/** Sets a specific player controller as the debug controller for testing */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void SetDebugController (ATacticalPlayerController* Controller);
 		
@@ -123,12 +133,11 @@ public:
 	UPROPERTY()
 	TMap<int32,FControllers> TeamsControllers;
 		
-	/** Controller bundle used for debug/testing purposes */
+	/** Controller bundle used when debug mode is active */
 	UPROPERTY()
 	FControllers DebugController;
 	
-	
-	/** Enables debug mode for the tactical manager */
+	/** Enables debug mode, bypassing team turn logic */
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	bool bDebug = false;
 	
@@ -144,58 +153,58 @@ public:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UTargetTile* TargetTile;
 	
-	/** Component handling neighbor tile discovery */
+	/** Component handling neighbor tile discovery and visuals */
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UNeighborTile* NeighborTile;
 	
-	/** Component handling reachable tile calculations */
+	/** Component handling reachable tile calculations and visuals */
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UReachableTiles* ReachableTiles;
 	
-	/** Component handling Adding and Removing Unit */
+	/** Component handling adding and removing units from the grid */
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UAddRemoveUnit* AddRemoveUnit;
 	
-	/** Component handling path tile calculations */
+	/** Component handling path tile calculations and visuals */
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UPathTiles* PathTiles;
 
-	/** Component handling combatant movement execution */
+	/** Component handling combatant movement execution along a path */
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Components")
 	UMoveCombatant* MoveCombatant;
 	
-	/** Mapping the Actions with their Static Meshes*/
+	/** Maps action components to their corresponding visualization meshes */
 	UPROPERTY()
 	TMap<UBaseActionComponent*, UInstancedStaticMeshComponent*> ComponentMesh;	
 	
-	/** Current Team*/
+	/** The currently active team number */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Team")
 	int32 CurrentTeam = 1;
 	
-	/** Mapping the Actions with sequences*/
+	/** Maps action components to their sequenced follow-up actions */
 	UPROPERTY()
 	TMap<UBaseActionComponent*, UBaseActionComponent*> SequencedActions;
 	
-	/** Adjust on Z for instantiated meshes */
+	/** Z offset applied to action visualization meshes */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
 	float ZOffset = 0.01f;
 	
-	/** Getting ready to PathTiles*/
+	/** Enables continuous path recalculation as the cursor moves */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
     bool bScanPath = false;
 
-	/** Whether to use target tile for path calculation */
+	/** Whether to use the target tile (instead of hover) for path calculation */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid|Visual", meta = (AllowPrivateAccess = "true"))
 	bool bUseTarget = false;
 
-	/** True while a movement action is in progress; blocks other actions */
+	/** True while a movement ability is executing; blocks other actions */
 	bool bIsExecutingAbility = false;
 	
 	// -----------------------------------------------------------------------
 	// Actions - Functions
 	// -----------------------------------------------------------------------
 	
-	/** Executes a given action component on the currently active team */
+	/** Executes a given action component using the currently active team's controller data */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void ExecuteAction(UBaseActionComponent* ActionComponent);	
 	
@@ -207,32 +216,25 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	bool GetCurrentTeam(FControllers& OutControllers) const;
 	
-	/** Returns controller data for all registered teams */
+	/** Returns controller data for all registered teams that have valid controllers */
 	TArray<FControllers> GetAllTeams() const;
 
-	/** Updates the current movement points for reachability calculations */
+	/** Updates the movement points available for reachability calculations */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void SetCurrentMovementPoints(int32 Points);
 	
-	/** Configures AddRemoveUnit with the unit tag, team, add/remove mode, change-team flag, and combatant database */
+	/** Configures AddRemoveUnit with spawn parameters: unit tag, team, add/remove flag, and change-team flag */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void StartAddOrRemoveUnit(FGameplayTag InUnit, int32 InTeam, bool bInAdd, bool bInChangeTeam) const;
 	
-
 	/**
-	 * Computes reachable tiles from the SelectTile's source coordinate within the specified movement budget,
-	 * updates the ReachableMesh visual instances at the corresponding world locations,
-	 * and returns the results including the reachable coordinates and their world positions.
-	 *
-	 * Sets SourceCoord and CurrentMovementPoints on the ReachableTiles component,
-	 * computes reachable tiles via the Grid, retrieves world locations from the
-	 * GridRuntimeStateComponent, and instantiates the ReachableMesh at those positions.
-	 *
-	 * @param MovementPoints     The movement point budget for reachability calculations
-	 * @param bFlying			 Consider if the movement is a flying.
-	 * @param OutReachableTiles  All grid coordinates reachable within the movement budget
-	 * @param OutLocations       World-space locations of the reachable tiles (used for mesh placement)
-	 * @return                   True if at least one reachable tile was found
+	 * Computes reachable tiles from the SelectTile's source coordinate within the specified movement budget.
+	 * Updates the ReachableMesh visual instances and returns the results.
+	 * @param MovementPoints     The movement point budget for reachability.
+	 * @param bFlying            Whether flying movement is considered.
+	 * @param OutReachableTiles  All grid coordinates reachable within the budget.
+	 * @param OutLocations       World-space locations for mesh placement.
+	 * @return True if at least one reachable tile was found.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	bool CalculateReachableTiles(
@@ -242,45 +244,44 @@ public:
 		);
 
 	/**
-	 * After ReachableTiles, find the current Path from a selected tile to a hovered tile or target tile.
-	 * 
-	 * @param OutPathTiles       The Path from the source to Target
-	 * @param OutLocations       World-space locations of the reachable tiles (used for mesh placement)
-	 * @return                   True if at least one reachable tile was found
+	 * Computes the path from the selected tile to the hover or target tile.
+	 * @param OutPathTiles   The ordered path coordinates.
+	 * @param OutLocations   World-space locations for mesh placement.
+	 * @return True if a valid path was found.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	bool CalculatePathTiles(
 		TArray<FGridCoord>& OutPathTiles, TArray<FVector>& OutLocations
 	);
 	
-	/** Adjust ScanPath*/
+	/** Enables or disables continuous path scanning */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void SetScanPath(bool bNewScanPath);
 	
-	/** Get ScanPath value*/
+	/** Returns whether continuous path scanning is active */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	bool GetScanPath() const;
 
-	/** Adjust UseTarget*/
+	/** Enables or disables use of the target tile (instead of hover) for path calculation */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void SetUseTarget(bool bNewUseTarget);
 
-	/** Get UseTarget value*/
+	/** Returns whether target tile is used for path calculation */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	bool GetUseTarget() const;
 		
-	/** Execute the add or remove unit */
+	/** Applies the current AddRemoveUnit configuration to the selected tile */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	bool ApplyAddRemoveUnit();
 
-	/** Move unit */
+	/** Executes a full unit move: validates, sorts path, and triggers movement */
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	bool AbilityMoveUnit();
 
-	/** 
-	 * Populates TeamsControllers for teams 0-7. 
-	 * Each int32 in PlayerTeams marks that team as player-controlled (TacticalPlayerController).
-	 * Teams 0-7 not in the array become AI-controlled (TacticalAIController).
+	/**
+	 * Populates TeamsControllers for teams 0-7.
+	 * Teams listed in PlayerTeams become player-controlled (ATacticalPlayerController).
+	 * Teams not in the list become AI-controlled (ATacticalAIController).
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Setup")
 	void SetupTeams(const TArray<int32>& PlayerTeams);
@@ -289,7 +290,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	void SetMoveDuration(float NewDuration);
 
-	/** Called when a MoveCombatant movement finishes */
+	/** Called when a MoveCombatant movement sequence completes */
 	UFUNCTION()
 	void OnMoveComplete();
 };

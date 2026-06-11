@@ -1,4 +1,4 @@
-// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// © 2026 Gabriel Nobile Diniz. All Rights Reserved.
 
 #pragma once
 
@@ -7,22 +7,35 @@
 #include "Grid/GridType.h"
 #include "BaseActionComponent.generated.h"
 
-
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+/**
+ * Base class for all tactical action components.
+ * Provides shared state (source/target coords, tile data, grid reference)
+ * and the common execution interface used by specialized action components.
+ */
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SFAF_API UBaseActionComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
-	// Sets default values for this component's properties
+	/**
+	 * Constructs the BaseActionComponent.
+	 */
 	UBaseActionComponent();
 
 protected:
-	// Called when the game starts
+	/**
+	 * Initializes the action component state on game start.
+	 */
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
+	/**
+	 * Per-frame tick for action component updates.
+	 * @param DeltaTime Frame tick delta.
+	 * @param TickType The kind of tick this frame.
+	 * @param ThisTickFunction The tick function handling this tick.
+	 */
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	// -----------------------------------------------------------------------
@@ -37,33 +50,51 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Action")
 	void SetReady(bool bIsReady) { bReady = bIsReady;};
 	
-	/** Sets the grid for the action */
+	/** Assigns the grid actor this action operates on */
 	UFUNCTION(BlueprintCallable, Category="Action")
 	void SetGrid(AGridType* GridType) { Grid = GridType;};
 	
-	/** Execute the action */
+	/**
+	 * Executes the action with the given source and target coordinates.
+	 * Implemented as a BlueprintNativeEvent for override support in both C++ and Blueprints.
+	 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Action")
 	bool Execute(const FGridCoord& InSourceCoord, bool bHasHit, const FGridCoord& InTargetCoord);
 
+	/**
+	 * Implementation of the Execute BlueprintNativeEvent.
+	 * @param InSourceCoord The source grid coordinate.
+	 * @param bHasHit Whether a valid hit was detected.
+	 * @param InTargetCoord The target grid coordinate.
+	 * @return True if execution succeeded.
+	 */
 	virtual bool Execute_Implementation(const FGridCoord& InSourceCoord, bool bHasHit, const FGridCoord& InTargetCoord);
 	
-	/**Get the Data*/
+	/** Returns tile static data for either the source or target tile (based on bIsTarget) */
 	FGridTileStaticData GetTileData(bool bIsTarget);
 
-	/** Returns both source and target tile data at once */
+	/** Returns both source and target tile static data at once */
 	UFUNCTION(BlueprintPure, Category = "Action")
 	void GetTileData(FGridTileStaticData& OutSourceData, FGridTileStaticData& OutTargetData) const;
 	
+	/**
+	 * Populates LocationsForMeshes with world-space positions for visual mesh instances.
+	 * Implemented as BlueprintNativeEvent for per-action customization.
+	 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Action")
 	bool SetLocationsForMeshes();
 
+	/**
+	 * Implementation of the SetLocationsForMeshes BlueprintNativeEvent.
+	 * @return True if locations were successfully computed.
+	 */
 	virtual bool SetLocationsForMeshes_Implementation();
 	
-	/**Get the Locations for spawn Instanced Meshes*/
+	/** Returns the world-space locations for instanced mesh placement */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	TArray<FVector> GetLocationsForMeshes();
 		
-	/** Returns the source or target grid coordinate based on bIsTarget */
+	/** Returns the source (bIsTarget=false) or target (bIsTarget=true) grid coordinate */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	const FGridCoord& GetCoord(bool bIsTarget) const { return bIsTarget ? TargetCoord : SourceCoord; }
 
@@ -72,7 +103,7 @@ protected:
 	// State
 	// -----------------------------------------------------------------------
 
-	/** Flag indicating if the action is ready */
+	/** Whether this action is ready for execution */
 	UPROPERTY(BlueprintReadOnly, Category="Action")
 	bool bReady = false;		
 		
@@ -84,19 +115,19 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	FGridCoord TargetCoord;
 	
-	/** Whether the action's hit condition was satisfied */
+	/** Whether the action's hit condition was satisfied during execution */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	bool bActionHasHit = false;
 	
-	/** Static tile data for the source tile */
+	/** Cached static tile data for the source tile */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	FGridTileStaticData SourceTileData;
 
-	/** Static tile data for the target tile */
+	/** Cached static tile data for the target tile */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	FGridTileStaticData TargetTileData;
 	
-	/** World-space positions where visual mesh instances are placed */
+	/** World-space positions for visual mesh instances */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	TArray<FVector> LocationsForMeshes;
 	
@@ -107,5 +138,4 @@ protected:
 	/** Weak pointer to the grid actor this action operates on */
 	UPROPERTY(BlueprintReadOnly, Category = "Action")
 	TObjectPtr<AGridType> Grid;
-
 };

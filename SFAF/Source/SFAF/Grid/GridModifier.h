@@ -1,4 +1,4 @@
-// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// © 2026 Gabriel Nobile Diniz. All Rights Reserved.
 
 #pragma once
 
@@ -13,47 +13,55 @@
 class UBoxComponent;
 class UStaticMeshComponent;
 
-// ---------------------------------------------------------------------------
-// Actor
-// ---------------------------------------------------------------------------
-
+/**
+ * An actor that modifies grid tiles within its volume.
+ * Can override or add to tile cost, apply gameplay tags, and change tile type.
+ * Snaps to the nearest grid position automatically.
+ */
 UCLASS()
 class SFAF_API AGridModifier : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
+	/** Default constructor for the grid modifier actor */
 	AGridModifier();
 
 	// -----------------------------------------------------------------------
 	// API
 	// -----------------------------------------------------------------------
 	
-	/** Change Preview Visibility */
+	/** Toggles the visibility of the editor preview mesh */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	void SetPreviewVisible(bool bVisible);
 	
-	/** Apply the modifier effect to tile data */
+	/**
+	 * Applies this modifier's effect to tile data.
+	 * Modifies the tile type, cost, and gameplay tags in place.
+	 */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	void ApplyToTile(FGameplayTag& InOutTileType, int32& InOutCost, FGameplayTagContainer& InOutTags) const;
 	
-	/** Returns the Tile Type Tag associated with this modifier */
+	/** Returns the gameplay tag identifying this modifier's tile type */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	FGameplayTag GetTileModificationTag() const;
 	
-	/** Returns additional tags to be applied to the tile */
+	/** Returns all gameplay tags to be applied to affected tiles */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	FGameplayTagContainer GetTileTags() const;
 
-	/** Checks if a world position is within the modifier's volume */
+	/**
+	 * Checks whether a world position falls within this modifier's collision volume.
+	 * @param WorldPos The world position to test.
+	 * @return True if the position is inside the volume.
+	 */
 	bool AffectsPosition(const FVector& WorldPos) const;
 	
-	/** Return the correct Coord */
+	/** Returns the snapped grid coordinate of this modifier */
 	UFUNCTION(BlueprintPure, Category = "Grid")
 	FGridCoord GetSnappedCoord() const;
 	
-	/** Return the correct world location */
+	/** Returns the snapped world location of this modifier */
 	UFUNCTION(BlueprintPure, Category = "Grid")
 	FVector GetSnappedWorldLocation() const;
 
@@ -61,18 +69,20 @@ public:
 	// Components
 	// -----------------------------------------------------------------------
 	
-	/** Collision volume defining the area of effect */
+	/** Collision volume defining the spatial area this modifier affects */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
 	TObjectPtr<UBoxComponent> Volume;
 
-	/** Visual preview of the modifier in the editor */
+	/** Static mesh used for visual preview of the modifier in the editor */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
 	TObjectPtr<UStaticMeshComponent> PreviewMesh;
 
+	/** Component responsible for snapping this actor to the nearest grid tile */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
 	TObjectPtr<UGridSnapComponent> GridSnapComponent;
 
 protected:
+	/** Snaps the modifier to the grid when constructed or edited in the editor */
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 public:
@@ -80,34 +90,35 @@ public:
 	// Configuration
 	// -----------------------------------------------------------------------
 
-	/** The modification type tag to apply */
+	/** The tile modification type tag (e.g., Grid.Type.Obstacle, Grid.Cost.Double) */
 	UPROPERTY(EditAnywhere, Category = "Grid")
 	FGameplayTag TileModificationTag;
 
-	/** Movement cost value-added or overridden */
+	/** Movement cost value to apply (adds to or overrides the tile's cost depending on CostMode) */
 	UPROPERTY(EditAnywhere, Category = "Grid")
 	int32 CostValue = 0;
 
-	/** Priority for resolving multiple overlapping modifiers */
+	/** Priority for resolving conflicts when multiple modifiers overlap the same tile */
 	UPROPERTY(EditAnywhere, Category = "Grid")
 	int32 Priority = 0;
 	
-	/** All gameplay tags to add to affected tiles */
+	/** Additional gameplay tags to apply to affected tiles */
 	UPROPERTY(EditAnywhere, Category = "Grid")
 	FGameplayTagContainer TileTags;	
 	
-	/** How the cost should be applied (Add, Override, etc.) */
+	/** How the cost value is applied: Override (replace) or Additive */
 	UPROPERTY(EditAnywhere, Category = "Grid")
 	EGridModifierMode CostMode = EGridModifierMode::Override;
 
-	/** The origin actor for grid snapping operations. */
+	/** The grid actor that provides the snapping origin reference */
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="Grid")
 	TObjectPtr<AActor> GridOriginActor;
 
 protected:
+	/** Initializes the modifier when the game starts */
 	virtual void BeginPlay() override;
 
 public:	
+	/** Updates the modifier each frame */
 	virtual void Tick(float DeltaTime) override;
-
 };

@@ -1,58 +1,59 @@
-// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// © 2026 Gabriel Nobile Diniz. All Rights Reserved.
 
 #pragma once
 
 #include "CoreMinimal.h"
-
 #include "GridCoord.generated.h"
 
 /**
- * Structure representing coordinates on the grid (X, Y).
- * Used for identifying tile positions and performing grid math.
+ * Represents a 2D coordinate on the hex grid (X, Y).
+ * Used throughout the grid system to identify individual tile positions
+ * and perform hex-based mathematical operations.
  */
 USTRUCT(BlueprintType)
 struct FGridCoord
 {
 	GENERATED_BODY()
 
-	/** Default constructor. Initializes to (0, 0). */
+	/** Default constructor. Initializes to (-1, -1) to indicate an invalid/unset coordinate. */
 	FGridCoord() {}
 
-	/** 
-	 * Constructor with parameters.
-	 * @param InX The X coordinate.
-	 * @param InY The Y coordinate.
+	/**
+	 * Constructs a grid coordinate with explicit X and Y values.
+	 * @param InX The column index on the hex grid.
+	 * @param InY The row index on the hex grid.
 	 */
 	FGridCoord(int32 InX, int32 InY) : X(InX), Y(InY) {}
 
-	/** The X position on the grid. */
+	/** The column (X-axis) position on the grid. Default -1 indicates an unset state. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	int32 X = -1;
 
-	/** The Y position on the grid. */
+	/** The row (Y-axis) position on the grid. Default -1 indicates an unset state. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	int32 Y = -1;
 
+	/**
+	 * Implicit conversion to FIntPoint for compatibility with Unreal utilities.
+	 * @return The coordinate as an FIntPoint.
+	 */
 	operator FIntPoint() const { return FIntPoint(X, Y); }
-		
-	/** Equality operator for FGridCoord. */
+
+	/** Returns true if both coordinates have identical X and Y values */
 	FORCEINLINE bool operator==(const FGridCoord& Other) const
 	{
 		return X == Other.X && Y == Other.Y;
 	}
 
-	/** Inequality operator for FGridCoord. */
+	/** Returns true if X or Y differ between the two coordinates */
 	FORCEINLINE bool operator!=(const FGridCoord& Other) const
 	{
 		return X != Other.X || Y != Other.Y;
 	}
 };
 
+/** Hash function for FGridCoord, enabling its use as a TMap key or TSet element */
 FORCEINLINE uint32 GetTypeHash(const FGridCoord& Coord)
 {
-	return HashCombine(
-		GetTypeHash(Coord.X),
-		GetTypeHash(Coord.Y)
-	);
+	return HashCombine(GetTypeHash(Coord.X), GetTypeHash(Coord.Y));
 }
-

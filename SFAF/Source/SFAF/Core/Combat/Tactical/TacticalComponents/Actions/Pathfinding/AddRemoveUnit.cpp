@@ -10,7 +10,7 @@
 bool UAddRemoveUnit::Execute_Implementation(const FGridCoord& InSourceCoord, bool bHasHit,
 	const FGridCoord& InTargetCoord)
 {
-	
+	// Route execution based on the configured mode
 	if (bChangeTeam)
 	{
 		ChangeUnitTeam(InSourceCoord);
@@ -32,6 +32,7 @@ bool UAddRemoveUnit::Execute_Implementation(const FGridCoord& InSourceCoord, boo
 
 void UAddRemoveUnit::AddUnit(FGridCoord Coord)
 {
+	// Validate dependencies
 	if (!CombatantDatabase)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("AddRemoveUnit::AddUnit — CombatantDatabase is null"));
@@ -48,6 +49,7 @@ void UAddRemoveUnit::AddUnit(FGridCoord Coord)
 		return;
 	}
 
+	// Look up combatant data from the database
 	FCombatantData CombatantData;
 	if (!CombatantDatabase->GetCombatantData(CurrentUnit, CombatantData))
 	{
@@ -60,6 +62,7 @@ void UAddRemoveUnit::AddUnit(FGridCoord Coord)
 		return;
 	}
 
+	// Validate the target tile exists and is unoccupied
 	FGridTileStaticData* TileStaticData = Grid->GetTileStaticData(Coord);
 	if (!TileStaticData)
 	{
@@ -74,6 +77,7 @@ void UAddRemoveUnit::AddUnit(FGridCoord Coord)
 		return;
 	}
 
+	// Spawn the new combatant at the tile location
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
@@ -92,6 +96,7 @@ void UAddRemoveUnit::AddUnit(FGridCoord Coord)
 	}
 	UE_LOG(LogTemp, Warning, TEXT("AddRemoveUnit::AddUnit — Spawned %s at (%d,%d)"), *SpawnedUnit->GetName(), Coord.X, Coord.Y);
 
+	// Update tile occupancy and assign team
 	FGridTileOccupancy Occupancy;
 	Occupancy.OccupyingUnit = SpawnedUnit;
 	TileStaticData->Occupancy = Occupancy;

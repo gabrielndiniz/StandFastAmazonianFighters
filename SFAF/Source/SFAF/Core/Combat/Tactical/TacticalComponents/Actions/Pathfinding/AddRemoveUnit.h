@@ -1,4 +1,4 @@
-// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// © 2026 Gabriel Nobile Diniz. All Rights Reserved.
 
 #pragma once
 
@@ -7,7 +7,10 @@
 #include "Core/Combat/Tactical/TacticalComponents/Actions/BaseActionComponent.h"
 #include "AddRemoveUnit.generated.h"
 
-
+/**
+ * Action component that spawns or removes combatant units on the grid.
+ * Supports adding new units, removing existing ones, and changing unit teams.
+ */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SFAF_API UAddRemoveUnit : public UBaseActionComponent
 {
@@ -15,37 +18,44 @@ class SFAF_API UAddRemoveUnit : public UBaseActionComponent
 
 public:
 	
+	/**
+	 * Executes the add or remove unit action on the target tile.
+	 * @param InSourceCoord The source grid coordinate.
+	 * @param bHasHit Whether a valid hit was detected.
+	 * @param InTargetCoord The target grid coordinate.
+	 * @return True if the unit was successfully added or removed.
+	 */
 	virtual bool Execute_Implementation(const FGridCoord& InSourceCoord, bool bHasHit, const FGridCoord& InTargetCoord) override;
 
-	/** Spawn unit */
+	/** Spawns a new unit at the given grid coordinate */
 	UFUNCTION(BlueprintCallable, Category="Combat")
 	void AddUnit(FGridCoord Coord);
 	
-	/** Spawn unit */
+	/** Removes the unit occupying the given grid coordinate */
 	UFUNCTION(BlueprintCallable, Category="Combat")
 	void RemoveUnit(FGridCoord Coord);
 	
-	/** Change team of unit */
+	/** Changes the team of the unit at the given grid coordinate */
 	UFUNCTION(BlueprintCallable, Category="Combat")
 	void ChangeUnitTeam(FGridCoord Coord);
 	
-	/** The unit to be summoned */
+	/** The unit type tag identifying which combatant to spawn */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Combat")
 	FGameplayTag CurrentUnit;
 
-	/** Team of the unit */
+	/** Target team number for spawning or team-changing */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Combat")
 	int32 Team;	
 	
-	/** Choose Between add or remove the unit */
+	/** If true, adds a unit; if false, removes a unit */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Combat")
 	bool bAdd = false;
 	
-	/** Change execution to change team */
+	/** If true, executes a team-change operation instead of add/remove */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Combat")
 	bool bChangeTeam = false;
 	
-	/** Change execution to change team */
+	/** Reference to the combatant database for unit type lookups */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Combat")
 	UCombatantDatabaseDataAsset* CombatantDatabase;
 };

@@ -70,14 +70,14 @@ bool UGridPathfindingComponent::GetNeighborsCoords(
 
         const FGameplayTagContainer& Tags = TileStaticData->TileTags;
 
-        // Blocked e Obstacle 
+        // Skip blocked and obstacle tiles (impassable to ground units)
         if (Tags.HasTag(FGameplayTag::RequestGameplayTag("Grid.Type.Blocked")) ||
             Tags.HasTag(FGameplayTag::RequestGameplayTag("Grid.Type.Obstacle")))
         {
             continue;
         }
 
-        // FlyingOnly 
+        // Skip flying-only tiles for non-flying units
         if (Tags.HasTag(FGameplayTag::RequestGameplayTag("Grid.Type.FlyingOnly")) && !bIsFlying)
         {
             continue;
@@ -200,6 +200,7 @@ bool UGridPathfindingComponent::GetPathCoords(const FGridCoord Source, const FGr
     }
 
    
+    // A* pathfinding node with tie-breaking by hop count and linearity
     struct FPathSearchNode
     {
         int32 TotalCost;
@@ -207,6 +208,7 @@ bool UGridPathfindingComponent::GetPathCoords(const FGridCoord Source, const FGr
         int32 LinearityPenalty;
         FGridCoord Coord;
 
+        // Prefer lower total cost, then fewer hops, then more linear paths
         bool operator<(const FPathSearchNode& Other) const
         {
             if (TotalCost != Other.TotalCost) return TotalCost < Other.TotalCost;
@@ -215,11 +217,13 @@ bool UGridPathfindingComponent::GetPathCoords(const FGridCoord Source, const FGr
         }
     };
 
+    // A* state: cost-so-far (GScore), hop count, and predecessor tracking
     TMap<FGridCoord, int32> GScore;
     TMap<FGridCoord, int32> Hops;
     TMap<FGridCoord, FGridCoord> CameFrom;
     TArray<FPathSearchNode> OpenList;
 
+    // Insert node into sorted open list (lowest TotalCost first)
     auto Push = [&](const FPathSearchNode& Node)
     {
         int32 InsertIndex = OpenList.Num();
@@ -234,6 +238,7 @@ bool UGridPathfindingComponent::GetPathCoords(const FGridCoord Source, const FGr
         OpenList.Insert(Node, InsertIndex);
     };
 
+    // Pop the highest-priority node from the open list
     auto Pop = [&]() -> FPathSearchNode
     {
         FPathSearchNode Node = OpenList[0];
@@ -241,6 +246,7 @@ bool UGridPathfindingComponent::GetPathCoords(const FGridCoord Source, const FGr
         return Node;
     };
 
+    // Initialize A* with the source node
     GScore.Add(Source, 0);
     Hops.Add(Source, 0);
     Push({UGridMathLibrary::GetHexDistance(Source, Target), 0, 0, Source});

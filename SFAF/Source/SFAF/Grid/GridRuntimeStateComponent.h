@@ -14,15 +14,22 @@ class UAbilitySystemComponent;
 // Enums
 // ---------------------------------------------------------------------------
 
+/** Runtime states a grid tile can be in during tactical gameplay */
 UENUM(BlueprintType)
 enum class EGridTileStateType : uint8
 {
     None,
+    /** Tile is currently under the mouse cursor */
     Hovered,
+    /** Tile has been clicked/selected by the player */
     Selected,
+    /** Tile is part of the current movement path */
     InPath,
+    /** Tile is a neighbor of the selected tile */
     Neighbor,
+    /** Tile was discovered during pathfinding expansion */
     Discovered,
+    /** Tile was analyzed during pathfinding evaluation */
     Analyzed
 };
 
@@ -30,63 +37,76 @@ enum class EGridTileStateType : uint8
 // Structs
 // ---------------------------------------------------------------------------
 
+/** Dynamic runtime flags for a single tile (distinct from the static tile data) */
 USTRUCT(BlueprintType)
 struct FGridTileRuntimeState
 {
     GENERATED_BODY()
 
+    /** Whether this tile is part of the current movement path */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
     bool bInPath = false;
 
+    /** Whether this tile is adjacent to the selected tile */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
     bool bIsNeighbor = false;
 
+    /** Whether this tile was discovered during pathfinding */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
     bool bIsDiscovered = false;
 
+    /** Whether this tile was analyzed during pathfinding */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
     bool bIsAnalyzed = false;
 };
 
+/** Occupancy information for a tile, identifying which combatant (if any) is present */
 USTRUCT(BlueprintType)
 struct FGridTileOccupancy
 {
     GENERATED_BODY()
 
+    /** The combatant currently occupying this tile, or nullptr if unoccupied */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
     TObjectPtr<ACombatant_Base> OccupyingUnit = nullptr;
-
-    // Occupancy just have the unit. The reason to maintain the UStruct is to make it expensive later if needed.
-    // For example, I could put things that are not Base Combatant, like an Hazard.
 };
 
-/** Static data —  created on GenerateGrid, update only after unit movement */
+/**
+ * Static tile data created during grid generation.
+ * Stores the world location, instance index, gameplay tags, and occupancy for each tile.
+ * Updated when units move on or off the tile.
+ */
 USTRUCT(BlueprintType)
 struct FGridTileStaticData
 {
     GENERATED_BODY()
 
+    /** World-space position of the tile center */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
     FVector WorldLocation = FVector::ZeroVector;
 
+    /** Index of the instanced mesh representing this tile */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
     int32 InstanceIndex = INDEX_NONE;
 
+    /** Gameplay tags describing tile properties (walkable, cost, visual, etc.) */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
     FGameplayTagContainer TileTags;
 
+    /** Occupancy state identifying which unit (if any) is on this tile */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
     FGridTileOccupancy Occupancy;
-        
 };
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-/** 
- * Component responsible for managing the runtime state of the grid.
- * Tracks static tile data (location, tags, occupancy) and dynamic states (selection, paths).
+/**
+ * Manages all runtime state for the grid system.
+ * Tracks static tile data (location, tags, occupancy) and dynamic states
+ * (selection, path highlighting, neighbor discovery).
+ * Also manages tactical modifier meshes and their positions.
  */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SFAF_API UGridRuntimeStateComponent : public UActorComponent
@@ -94,12 +114,15 @@ class SFAF_API UGridRuntimeStateComponent : public UActorComponent
     GENERATED_BODY()
 
 public:
+    /** Default constructor for the runtime state component */
     UGridRuntimeStateComponent();
 
 protected:
+    /** Initializes the component when the game starts */
     virtual void BeginPlay() override;
 
 public:
+    /** Updates the component each frame */
     virtual void TickComponent(float DeltaTime, ELevelTick TickType,
         FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -107,136 +130,141 @@ public:
     // Static Tile API
     // -----------------------------------------------------------------------
 
-    /** Register Static Data of Tile */
+    /** Registers a tile's static data at the given grid coordinate */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     void RegisterTile(const FGridCoord& Coord, const FGridTileStaticData& Data);
-    
-    /** Remove a specific tile*/
+
+    /** Removes a tile and its static data from the registry */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     void RemoveTile(const FGridCoord& Coord);
 
-    /** Returns static data from tile (const) */
+    /** Returns const pointer to tile static data, or nullptr if not found */
     const FGridTileStaticData* GetStaticTile(const FGridCoord& Coord) const;
 
-    /** Returns static data from tile (not const) */
+    /** Returns mutable pointer to tile static data, or nullptr if not found */
     FGridTileStaticData* GetMutableStaticTile(const FGridCoord& Coord);
-    
-    /** Returns static data from tile (Blueprint) */
+
+    /** Blueprint-friendly version of GetStaticTile that copies data out */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     bool BP_GetStaticTile(const FGridCoord& Coord, FGridTileStaticData& OutTileData) const;
 
-    /** Verify if tile exists */
+    /** Returns true if a tile is registered at the given coordinate */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     bool HasTile(const FGridCoord& Coord) const;
 
-    /** Update tile occupancy */
+    /** Updates the occupancy data for a specific tile */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     void SetTileOccupancy(const FGridCoord& Coord, const FGridTileOccupancy& Occupancy);
 
-    /** Returns tile occupancy */
+    /** Returns the occupancy data for a specific tile */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     FGridTileOccupancy GetTileOccupancy(const FGridCoord& Coord) const;
 
-    /** Clear all tiles */
+    /** Removes all tile registrations, states, and tactical data */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     void ClearAllTiles();
-    
-    /** Best way to have all points */
+
+    /** Returns all grid coordinates that have registered static data */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
-    TArray<FGridCoord> GetTilesWithStaticData () const;
-    
-    /** Returns the cost according to DataTag */
+    TArray<FGridCoord> GetTilesWithStaticData() const;
+
+    /** Evaluates movement cost from tile tags, accounting for flying status */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     static int32 GetTilePathCost(bool bConsiderFlying, FGameplayTagContainer DataTags);
 
-    /** Given an list, closest position considering costs. Returns its index on the list */
+    /** Finds the nearest tile index from a list, weighted by cost */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     int32 GetNearestTileFromTargetPosition (const TArray<FGridCoord>& Positions, FGridCoord Target, bool bConsiderFlying) const;
-    
-    /** Given a list, the closest position considering costs. Returns its index on the list */
+
+    /** Returns the gameplay tags for a tile at the given coordinate */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     FGameplayTagContainer GetTileTags (FGridCoord Target) const;
-    
-    /** Return true if Coord is fly only */
+
+    /** Returns true if the tile at the given coordinate is fly-only */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     bool GetTileFlyOnly (FGridCoord Coord) const;
-    
-    /** Returns the movement cost of a given tile */
+
+    /**
+     * Returns the movement cost for a tile, writing it into the output parameter.
+     * @param Coord The grid coordinate to query.
+     * @param Cost  Output parameter receiving the movement cost.
+     * @return True if the tile was found and its cost was retrieved.
+     */
     bool GetTileCost(FGridCoord Coord, int32& Cost) const;
 
-    /** Give the center location of the Grid */
+    /** Returns the geometric center of the grid based on first and last tile positions */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     FVector GetGridCenterLocation () const;
 
-    /** Give the center location of the Grid */
+    /** Returns the world location of the first (bottom) tile in the grid */
     UFUNCTION(BlueprintCallable, Category = "Grid|Static")
     FVector GetBottomLocation () const;
-    
-    /** Give the first spawned tile */
+
+    /** Returns the coordinate of the first spawned tile */
     UFUNCTION(BlueprintCallable, Category = "Grid|Tile")
     FGridCoord GetFirstTile() const { return FirstTile; }
 
-    /** Set the first spawned tile */
+    /** Sets the coordinate of the first spawned tile */
     UFUNCTION(BlueprintCallable, Category = "Grid|Tile")
     void SetFirstTile(const FGridCoord& NewFirstTile) { FirstTile = NewFirstTile; }
 
-    /** Give the last spawned tile */
+    /** Returns the coordinate of the last spawned tile */
     UFUNCTION(BlueprintCallable, Category = "Grid|Tile")
     FGridCoord GetLastTile() const { return LastTile; }
 
-    /** Set the last spawned tile */
+    /** Sets the coordinate of the last spawned tile */
     UFUNCTION(BlueprintCallable, Category = "Grid|Tile")
     void SetLastTile(const FGridCoord& NewLastTile) { LastTile = NewLastTile; }
 
-    /** Register a mesh for a specific tactical modifier tag */
+    /** Registers an instanced mesh component for a given tactical modifier tag */
     UFUNCTION(BlueprintCallable, Category = "Grid|Tactical")
     void RegisterTacticalMesh(FGameplayTag ModifierTag, UInstancedStaticMeshComponent* Mesh);
 
-    /** Returns tactical mesh according to tag */
+    /** Returns the tactical mesh associated with a modifier tag, or nullptr */
     UFUNCTION(BlueprintCallable, Category = "Grid|Tactical")
     UInstancedStaticMeshComponent* SelectTacticMeshWithTag(FGameplayTag ModifierTag) const;
 
-    /** Add a tactical modifier tag to a position */
+    /** Records a tactical modifier at a specific grid position */
     UFUNCTION(BlueprintCallable, Category = "Grid|Tactical")
     void AddTacticalModifierPosition(const FGridCoord& Coord, FGameplayTag ModifierTag);
 
-    /** Remove a tactical modifier from a position */
+    /** Removes the tactical modifier record at a grid position */
     UFUNCTION(BlueprintCallable, Category = "Grid|Tactical")
     void RemoveTacticalModifierPosition(const FGridCoord& Coord);
 
-    /** Returns modifier tag on a position */
+    /** Reads the modifier tag at a grid position, returns false if none exists */
     UFUNCTION(BlueprintCallable, Category = "Grid|Tactical")
     bool GetTileModifier(const FGridCoord& Coord, FGameplayTag& OutModifier) const;
-    
-    /** Clear all tactical data */
+
+    /** Clears all tactical modifier positions and resets their meshes */
     UFUNCTION(BlueprintCallable, Category = "Grid|Tactical")
     void ClearTacticalData();
-    
-    /** Return true if tile is walkable */
+
+    /** Returns true if the given gameplay tags mark the tile as walkable */
     UFUNCTION(BlueprintCallable, Category = "Grid|Tile")
     bool IsTileTypeWalkable(const FGameplayTagContainer TileTags) const;
-        
+
     // -----------------------------------------------------------------------
     // Runtime State API
     // -----------------------------------------------------------------------
 
-    /** Apply a state to a tile and update the cache */
+    /** Applies a state flag to a tile and updates the state cache */
     UFUNCTION(BlueprintCallable, Category = "Grid|State")
     bool AddTileState(const FGridCoord& Coord, EGridTileStateType StateType);
 
-    /** Remove the state of a tile and update the cache */
+    /** Removes a state flag from a tile and updates the state cache */
     UFUNCTION(BlueprintCallable, Category = "Grid|State")
     bool RemoveTileState(const FGridCoord& Coord, EGridTileStateType StateType);
 
-    /** Returns the current state of a tile */
+    /** Returns the current runtime state flags for a tile */
     UFUNCTION(BlueprintCallable, Category = "Grid|State")
     FGridTileRuntimeState GetTileState(const FGridCoord& Coord) const;
 
-    /** Returns all tiles on the picked state */
+    /** Returns all tiles currently in the given state */
     UFUNCTION(BlueprintCallable, Category = "Grid|State")
     TArray<FGridCoord> GetTilesByState(EGridTileStateType StateType) const;
 
-    /** Clear All Dynamic States */
+    /** Clears all dynamic state flags and cache */
     UFUNCTION(BlueprintCallable, Category = "Grid|State")
     void ClearAllStates();
 
@@ -244,26 +272,29 @@ public:
     // Data
     // -----------------------------------------------------------------------
 
+    /** Map of all registered static tile data keyed by grid coordinate */
     UPROPERTY(BlueprintReadOnly, Category = "Grid")
     TMap<FGridCoord, FGridTileStaticData> StaticTiles;
 
+    /** Map of dynamic runtime state flags keyed by grid coordinate */
     UPROPERTY(BlueprintReadOnly, Category = "Grid")
     TMap<FGridCoord, FGridTileRuntimeState> TileStates;
 
+    /** Maps modifier gameplay tags to their corresponding instanced mesh components */
     UPROPERTY(BlueprintReadOnly, Category = "Grid")
     TMap<FGameplayTag, TObjectPtr<UInstancedStaticMeshComponent>> TacticalModifiersMeshes;
 
+    /** Maps grid coordinates to their active tactical modifier tags */
     UPROPERTY(BlueprintReadOnly, Category = "Grid")
     TMap<FGridCoord, FGameplayTag> TacticalModifiersPositions;
-    
-    /** Cache mapping state types to the set of tiles currently in that state (for fast lookups) */
-    TMap<EGridTileStateType, TSet<FGridCoord>> TileStateCache;    
-    
+
+    /** Cache mapping each state type to the set of tiles currently in that state (fast lookups) */
+    TMap<EGridTileStateType, TSet<FGridCoord>> TileStateCache;
+
 protected:
     UPROPERTY(BlueprintReadOnly, Category = "Grid|Tile", meta = (AllowPrivateAccess = "true"))
     FGridCoord FirstTile = FGridCoord(TNumericLimits<int32>::Max(), 0);
-	
+
     UPROPERTY(BlueprintReadOnly, Category = "Grid|Tile", meta = (AllowPrivateAccess = "true"))
     FGridCoord LastTile = FGridCoord(0, 0);
-    
 };

@@ -1,4 +1,4 @@
-// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// © 2026 Gabriel Nobile Diniz. All Rights Reserved.
 
 #pragma once
 
@@ -14,79 +14,94 @@ struct FTilePathfindData
 {
     GENERATED_BODY()
 
-    /** List of neighbor coordinates */
+    /** Valid neighbor coordinates adjacent to this tile */
     TArray<FGridCoord> Neighbors;
 
-    /** Movement cost to enter this tile */
+    /** Movement cost required to enter this tile */
     int32 Cost = 1;
 
-    /** Whether only flying units can occupy this tile */
+    /** When true, only flying units can occupy this tile */
     bool bFlyOnly = false;
 };
 
-/** Internal node used by the A* pathfinding algorithm */
+/** Internal node used by the A* pathfinding algorithm for priority queue processing */
 struct FPathNode
 {
     /** Grid coordinate this node represents */
     FGridCoord Coord;
 
-    /** Accumulated cost from the start node */
+    /** Accumulated movement cost from the start node to this node */
     int CostSoFar = 0;
 
-    /** Estimated remaining cost to the goal (heuristic) */
+    /** Estimated remaining cost to the goal (admissible heuristic) */
     int Heuristic = 0;
 
-    /** Sum of CostSoFar + Heuristic */
+    /** Sum of CostSoFar + Heuristic (used as priority in the queue) */
     int TotalCost = 0;
 
-    /** Whether this node has already been evaluated */
+    /** Whether this node has already been fully evaluated (closed set) */
     bool IsClosed = false;
 
-    /** Pointer to the predecessor node for reconstructing the path */
+    /** Pointer to the predecessor node, used to reconstruct the final path */
     TSharedPtr<FPathNode> Parent = nullptr;
 
-    /** Comparison operator for the priority queue (lower TotalCost = higher priority) */
+    /** Comparison operator: lower TotalCost means higher priority in the queue */
     bool operator<(const FPathNode& Other) const {
         return TotalCost < Other.TotalCost;
     }
 };
 
+/**
+ * Static utility library providing hex grid mathematics and pathfinding operations.
+ * Includes coordinate conversions, neighbor detection, A* pathfinding helpers,
+ * and reachable-tile computation via BFS.
+ */
 UCLASS()
 class SFAF_API UGridMathLibrary : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 
 public:
-    /** 
-     * Converts hex grid offset coordinates to world space position.
-     * @param GridCoord The coordinates on the grid.
-     * @param GridOrigin The world space origin of the grid.
-     * @param TileSize The size/dimensions of a single tile.
-     * @param ZCorrection Vertical offset to apply to the final location.
-     * @return The calculated world space location of the tile center.
+    /**
+     * Converts hex grid offset coordinates to a world-space location.
+     * Accounts for the staggered row offset typical of hex grids.
+     * @param GridCoord     The tile coordinates on the grid.
+     * @param GridOrigin    The world-space origin (pivot) of the grid.
+     * @param TileSize      The physical dimensions of a single tile.
+     * @param ZCorrection   Additional vertical offset applied to the result.
+     * @return The world-space location at the center of the specified tile.
      */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static FVector HexOffsetToWorld(FGridCoord GridCoord, FVector GridOrigin, FVector TileSize, float ZCorrection);
 
-    /** 
-     * Given a world position, estimate the closest tile possible.
-     * @param Position The world-space position to snap.
-     * @param TileSize The size/dimensions of a single tile.
-     * @return The snapped world-space position.
+    /**
+     * Snaps an arbitrary XY world position to the nearest hex tile center on the grid plane.
+     * Does not check whether a tile actually exists at that position.
+     * @param Position  The world-space position to snap.
+     * @param TileSize  The physical dimensions of a single tile.
+     * @return The snapped world-space position on the hex grid.
      */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static FVector HexFindNearestTilePositionOnXYPlane(FVector Position, const FVector TileSize);
 
-    /** Converts a world-space position to hex offset grid coordinates */
+    /**
+     * Converts a world-space position back to hex offset grid coordinates.
+     * Inverse of HexOffsetToWorld.
+     * @param WorldPos   The world-space position to convert.
+     * @param GridOrigin The origin of the grid in world space.
+     * @param TileSize   The physical dimensions of a single tile.
+     * @return The grid coordinate corresponding to the given world position.
+     */
     static FGridCoord HexWorldToOffsetCoord(const FVector& WorldPos, const FVector& GridOrigin, const FVector& TileSize);
 
-    /** 
-     * Given an list, closest position considering costs. Returns its index on the list
-     * @param Positions List of potential coordinates
-     * @param StaticTiles Map of grid static data
-     * @param Target The target coordinate
-     * @param bConsiderFlying If true, ignores tile costs
-     * @return The index in the Positions array
+    /**
+     * Finds the nearest valid tile index from a list of positions by comparing distances
+     * to a target coordinate, optionally weighted by tile movement costs.
+     * @param Positions      Array of candidate grid coordinates.
+     * @param StaticTiles    Map of registered tile static data.
+     * @param Target         The target coordinate to measure distance from.
+     * @param bConsiderFlying If true, ignores tile cost multipliers.
+     * @return The index in Positions of the nearest valid tile, or INDEX_NONE.
      */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static int32 FindNearestTileIndex(
@@ -95,30 +110,31 @@ public:
         const FGridCoord& Target,
         bool bConsiderFlying
     );
-    
-    /** 
-    * Snaps a world-space position to the nearest valid hex grid position.
-    * Uses only mathematical conversion and does not depend on tile existence.
-    * @param WorldPosition The world-space position to snap.
-    * @param GridOrigin The world origin/pivot of the grid.
-    * @param TileSize The size/dimensions of a single tile.
-    * @return The snapped world-space position on the hex grid.
-    */
+
+    /**
+     * Snaps a world-space position to the nearest hex grid tile center.
+     * Pure mathematical conversion without checking tile existence.
+     * @param WorldPosition  The world-space position to snap.
+     * @param GridOrigin     The world origin of the grid.
+     * @param TileSize       The physical dimensions of a single tile.
+     * @return The snapped world-space position on the hex grid.
+     */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static FVector HexSnapWorldToGrid(
         const FVector& WorldPosition,
         const FVector& GridOrigin,
         const FVector& TileSize
     );
-    
+
     /**
-    * Finds the nearest registered tile from a world position.
-    * @param WorldPosition World-space position to search from.
-    * @param StaticTiles Map of grid static data.
-    * @param OutCoord Closest tile coordinate.
-    * @param OutTileData Closest tile static data.
-    * @return True if a valid tile was found.
-    */
+     * Finds the nearest registered tile from a world-space position by iterating
+     * all static tiles and checking squared distance.
+     * @param WorldPosition  The world-space position to search from.
+     * @param StaticTiles    Map of all registered tile static data.
+     * @param OutCoord       Output: the closest tile's grid coordinate.
+     * @param OutTileData    Output: the closest tile's static data.
+     * @return True if a valid tile was found.
+     */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static bool FindNearestTileFromWorldPosition(
         const FVector& WorldPosition,
@@ -126,45 +142,43 @@ public:
         FGridCoord& OutCoord,
         FGridTileStaticData& OutTileData
     );
-    
-    /**
-    * Return true if the number is even.
-    * @param Number is the analyzed number.
-    */
+
+    /** Returns true if the given integer is even */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static bool IsItEven(int32 Number);
-    
+
     /**
-    * Finds the neighbors of a tile.
-    * @param Coord Considered coordinate.
-    * @param StaticTiles Map of grid static data.
-    */
-    /** Finds the six neighboring coordinates for a given hex tile */
+     * Computes the six neighboring grid coordinates for a hex tile.
+     * Accounts for the staggered row pattern of the offset coordinate system.
+     * @param Coord           The source tile coordinate.
+     * @param NeighborsCoords Output array populated with up to 6 neighbor coordinates.
+     * @return True if at least one neighbor was found.
+     */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static bool GetHexNeighborTiles(
         const FGridCoord Coord,
         TArray<FGridCoord>& NeighborsCoords
     );
-    
+
     /** Returns true if both coordinates share the same row (same Y) */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static bool IsInTheSameLine(FGridCoord Coord1, FGridCoord Coord2);
 
-    /** Returns the hex grid distance between two coordinates (admissible heuristic for A*) */
+    /** Returns the Manhattan distance between two hex grid coordinates (admissible heuristic for A*) */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static int32 GetHexDistance(const FGridCoord& A, const FGridCoord& B);
 
     /**
      * Returns a linearity penalty for a tile relative to the Source->Target line.
-     * Lower values mean the tile is closer to the direct line (more linear path).
+     * Lower values indicate the tile lies closer to the direct line, producing straighter paths.
      */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static int32 GetLinearityPenalty(const FGridCoord& Source, const FGridCoord& Target, const FGridCoord& Tile);
 
     /**
-     * BFS expansion loop for reachable coordinate computation.
-     * Processes the OpenList, expanding neighbors via GetNeighborsFunc,
-     * tracking visited nodes in TilesPaths, and respecting the movement budget.
+     * BFS expansion loop for reachable-coordinate computation.
+     * Processes an open list, expands neighbors via the provided function,
+     * tracks visited nodes in TilesPaths, and respects the movement point budget.
      */
     static void ComputeReachableCoordsWhileLoop(
         const FGridCoord& StartCoord,
@@ -175,8 +189,11 @@ public:
         const TMap<FGridCoord, FTilePathfindData>& TilePathfindMap,
         const TFunction<void(const FGridCoord&, TArray<FGridCoord>&)>& GetNeighborsFunc
     );
-    
-    /** Sorts an unsorted path tile array from Source to Target using neighbor traversal */
+
+    /**
+     * Sorts an unsorted array of path tiles from Source to Target using neighbor traversal.
+     * Produces an ordered sequence suitable for movement execution.
+     */
     static TArray<FGridCoord> SortPathTiles(
         const FGridCoord& Source,
         const FGridCoord& Target,
@@ -184,18 +201,17 @@ public:
         UGridRuntimeStateComponent* RuntimeState
     );
 
-    /** Returns the movement cost to enter a single tile (reads from runtime state) */
+    /** Returns the movement cost of entering a single tile by reading from the runtime state */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static int32 GetTileMovementCost(UGridRuntimeStateComponent* RuntimeState, const FGridCoord& Coord);
 
-    /** Returns the total movement cost of a path (skips the first tile / source) */
+    /** Returns the total movement cost for an entire path (skips the source tile) */
     UFUNCTION(BlueprintCallable, Category = "Grid")
     static int32 GetPathMovementCost(UGridRuntimeStateComponent* RuntimeState, const TArray<FGridCoord>& InPath);
 
-    /** Horizontal spacing multiplier between hex tiles (slight overlap adjustment) */
+    /** Horizontal spacing multiplier between hex tiles */
     static constexpr float HEX_HORIZONTAL_SPACING = 0.501f;
 
-    /** Vertical spacing factor for hex grid layout (based on hex geometry ratio) */
+    /** Vertical spacing factor accounting for hex geometry ratio and staggered rows */
     static constexpr float HEX_VERTICAL_SPACING = 0.866025f * 2.3f;
-    
 };

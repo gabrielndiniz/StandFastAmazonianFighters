@@ -101,6 +101,7 @@ TArray<FGridCoord> UGridRuntimeStateComponent::GetTilesWithStaticData() const
 
 int32 UGridRuntimeStateComponent::GetTilePathCost(bool bConsiderFlying, FGameplayTagContainer DataTags)
 {
+    // Blocked tiles return a very high cost (effectively impassable)
     if (DataTags.HasTagExact(FGameplayTag::RequestGameplayTag("Grid.Type.Blocked")))
     {
         return 999;
@@ -108,6 +109,7 @@ int32 UGridRuntimeStateComponent::GetTilePathCost(bool bConsiderFlying, FGamepla
 
     int32 Cost = 1;
 
+    // Determine cost multiplier from tile tags
     if (DataTags.HasTagExact(FGameplayTag::RequestGameplayTag("Grid.Cost.Double")))
     {
         Cost = 2;
@@ -117,6 +119,7 @@ int32 UGridRuntimeStateComponent::GetTilePathCost(bool bConsiderFlying, FGamepla
         Cost = 3;
     }
 
+    // Flying units ignore cost multipliers
     if (bConsiderFlying)
     {
         Cost = 1;

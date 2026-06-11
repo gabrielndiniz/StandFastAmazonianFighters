@@ -1,5 +1,4 @@
-// � 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel N�bile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
-
+// © 2026 Gabriel Nobile Diniz. All Rights Reserved.
 
 #include "GridType.h"
 #include "GridModifier.h"

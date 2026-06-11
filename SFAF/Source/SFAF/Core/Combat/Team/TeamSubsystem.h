@@ -1,4 +1,4 @@
-// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// © 2026 Gabriel Nobile Diniz. All Rights Reserved.
 
 #pragma once
 
@@ -8,40 +8,31 @@
 
 class ACombatant_Base;
 
-/**
- * Stores the data for a single team.
- *
- * Used by the team registry to group combatants, team number, and color.
- */
+/** Stores runtime data for a single team: controller, display color, and registered combatants */
 USTRUCT(BlueprintType)
 struct FTeam
 {
     GENERATED_BODY()
 
-    /** Identify the controller of the team. */
+    /** The controller assigned to this team */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Team")
     TWeakObjectPtr<AController> Controller;
 
-    /** Display color used by the team. */
+    /** Display color used by the team for UI and identification */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Team")
     FLinearColor Color = FLinearColor::White;
 
-    /** Combatants currently assigned to this team. */
+    /** Combatant actors currently assigned to this team */
     UPROPERTY()
     TArray<TWeakObjectPtr<ACombatant_Base>> Combatants;
 };
 
 /**
- * Global combat team registry subsystem.
- *
+ * Global world subsystem managing combat team registration and queries.
+ * Automatically created per World/Map and lives for the duration of the tactical match.
  * Responsible for:
- * - Registering combatants into teams.
- * - Querying friendly/enemy relations.
- * - Managing tactical team ownership.
- *
- * Lifetime:
- * - Automatically created per World/Map.
- * - Exists during the entire tactical match.
+ * - Registering/unregistering combatants to/from teams.
+ * - Tracking team composition and ownership.
  */
 UCLASS()
 class SFAF_API UTeamSubsystem : public UWorldSubsystem
@@ -49,48 +40,33 @@ class SFAF_API UTeamSubsystem : public UWorldSubsystem
     GENERATED_BODY()
 
 public:
-
     // -----------------------------------------------------------------------
     // Team Registration API
     // -----------------------------------------------------------------------
 
-    /**
-     * Registers a combatant into a team.
-     *
-     * @param Actor
-     * Combatant actor being registered.
-     *
-     * @param TeamTag
-     * Gameplay tag representing the combatant team.
-     */
+    /** Registers a combatant actor into the specified team. Creates the team if it doesn't exist. */
     UFUNCTION(BlueprintCallable, Category = "Team")
     void RegisterUnitToTeam(ACombatant_Base* Unit, int32 TeamNumber);
 
+    /** Removes a combatant from the specified team. Cleans up empty team entries. */
     UFUNCTION(BlueprintCallable, Category = "Team")
     void UnregisterUnitFromTeam(ACombatant_Base* Unit, int32 TeamNumber);
 
 protected:
-
     // -----------------------------------------------------------------------
     // Runtime Team Registry
     // -----------------------------------------------------------------------
 
     /**
-     * Stores all registered combatants grouped by team tag.
-     *
+     * Maps team numbers to their runtime team data (controller, color, combatant list).
      * Example:
-     * Team 1
-     *   -> Unit A
-     *   -> Unit B
-     *
-     * Team 2
-     *   -> Unit X
-     *   -> Unit Y
+     *   Team 1 -> {Controller: PC, Combatants: [UnitA, UnitB]}
+     *   Team 2 -> {Controller: AIC, Combatants: [UnitX, UnitY]}
      */
     UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Team")
     TMap<int32, FTeam> TeamRegistry;
     
-    /** The quantity of teams on the game*/
+    /** The total number of distinct teams currently registered */
     UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Team")
     int32 TeamQuantity = 0;
 };

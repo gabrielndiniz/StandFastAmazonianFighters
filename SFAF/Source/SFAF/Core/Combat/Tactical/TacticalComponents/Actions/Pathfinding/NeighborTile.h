@@ -1,4 +1,4 @@
-// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// © 2026 Gabriel Nobile Diniz. All Rights Reserved.
 
 #pragma once
 
@@ -6,28 +6,44 @@
 #include "Core/Combat/Tactical/TacticalComponents/Actions/BaseActionComponent.h"
 #include "NeighborTile.generated.h"
 
-
+/**
+ * Action component that discovers and caches the valid neighbor tiles
+ * adjacent to a given source tile, respecting movement restrictions and flying state.
+ */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SFAF_API UNeighborTile : public UBaseActionComponent
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this component's properties
+	/**
+	 * Constructs the NeighborTile component.
+	 */
 	UNeighborTile();
 
 protected:
-	// Called when the game starts
+	/**
+	 * Initializes the neighbor tile component.
+	 */
 	virtual void BeginPlay() override;
 
 public:
-	// Called every frame
+	/**
+	 * Refreshes neighbor tile data each frame.
+	 * @param DeltaTime Frame tick delta.
+	 * @param TickType The kind of tick this frame.
+	 * @param ThisTickFunction The tick function handling this tick.
+	 */
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 	
+	/**
+	 * Updates the mesh instances with neighbor tile locations.
+	 * @return True if mesh locations were set successfully.
+	 */
 	virtual bool SetLocationsForMeshes_Implementation() override;
 	
-	/** Returns the list of neighbor coordinates computed by this component */
+	/** Returns the list of valid neighbor coordinates */
 	UFUNCTION(BlueprintCallable, Category="Action")
 	TArray<FGridCoord> GetNeighbors();
 	
@@ -39,7 +55,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category="Action")
 	TArray<FGridCoord> NeighborsCoords;
 	
-	/** Whether to ignore ground-based movement restrictions */
+	/** Whether to ignore ground-based movement restrictions for neighbor discovery */
 	UPROPERTY(BlueprintReadOnly, Category="Action")
 	bool bConsiderFly = true;	
 };

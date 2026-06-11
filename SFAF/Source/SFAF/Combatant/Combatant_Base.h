@@ -1,4 +1,4 @@
-// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permissi
+// Copyright 2025 StandFast Games, LLC
 
 #pragma once
 
@@ -12,36 +12,39 @@
 class UAbilitySystemComponent;
 class UAttributeSet;
 
+/** Delegate broadcast when a combatant's team assignment changes */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTeamChanged, int32, NewTeam);
 
-// ---------------------------------------------------------------------------
-// Actor
-// ---------------------------------------------------------------------------
-
+/**
+ * Base combatant class for all tactical units.
+ * Implements the Ability System Interface for GAS integration.
+ * Manages team affiliation and provides the core unit API.
+ */
 UCLASS()
 class SFAF_API ACombatant_Base : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
 public:
+	/** Default constructor */
 	ACombatant_Base();
 
 	// -----------------------------------------------------------------------
 	// Interface
 	// -----------------------------------------------------------------------
 
-	/** Returns the ability system component for this unit */
+	/** Returns the Ability System Component for GAS integration */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 	// -----------------------------------------------------------------------
 	// API
 	// -----------------------------------------------------------------------
 
-	/** Returns the gameplay tag identifying the unit type */
+	/** Returns the gameplay tag identifying this unit's type (e.g., Unit.Type.BulletAnt) */
 	UFUNCTION(BlueprintCallable, Category="Combatant|GAS")
 	FGameplayTag GetUnitTypeTag() const { return UnitTypeTag; }
 
-	/** Destroys the unit and all children/sub-actors cleanly */
+	/** Cleans up abilities and child actors, then destroys the unit */
 	UFUNCTION(BlueprintCallable, Category="Combatant")
 	void DestroyUnit();
 
@@ -49,32 +52,31 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Combatant|Team")
 	int32 GetTeam() const;
 
-	/** Sets the team number and registers with the TeamSubsystem */
+	/** Sets the team number and handles team subsystem registration */
 	UFUNCTION(BlueprintCallable, Category="Combatant|Team")
 	void SetTeam(int32 NewTeam);
 
-	/** Event broadcast when the team changes */
+	/** Event broadcast whenever this unit's team changes */
 	UPROPERTY(BlueprintAssignable, Category="Combatant|Team")
 	FOnTeamChanged OnTeamChanged;
 	
 protected:
-
-	/** Initializes the Ability System Component's actor info for this combatant */
+	/** Initializes the Ability System Component's owner and avatar actor info */
 	void InitAbilityActorInfo();
 
 	// -----------------------------------------------------------------------
 	// Components
 	// -----------------------------------------------------------------------
 
-	/** Ability System Component for GAS integration */
+	/** Ability System Component for Gameplay Ability System integration */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combatant|GAS")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
-	/** Attribute Set for unit statistics */
+	/** Attribute Set containing unit base stats */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combatant|GAS")
 	TObjectPtr<UAttributeSet> AttributeSet;
 
-	/** Component for Team Management */
+	/** Component for team affiliation management */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combatant|Team")
 	TObjectPtr<UTeamComponent> TeamComponent;
 	
@@ -82,9 +84,7 @@ protected:
 	// Data
 	// -----------------------------------------------------------------------
 
-	/** Gameplay tag representing the unit type */
+	/** Gameplay tag representing the specific unit type */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combatant|Unit")
 	FGameplayTag UnitTypeTag;
-	
-	
 };

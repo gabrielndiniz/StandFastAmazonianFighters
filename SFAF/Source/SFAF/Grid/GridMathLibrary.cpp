@@ -1,4 +1,4 @@
-// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// © 2026 Gabriel Nobile Diniz. All Rights Reserved.
 
 #include "Grid/GridMathLibrary.h"
 #include "GridRuntimeStateComponent.h"
@@ -8,6 +8,7 @@ FVector UGridMathLibrary::HexOffsetToWorld(FGridCoord GridCoord, FVector GridOri
     const float WorldX = GridCoord.X * TileSize.X * HEX_HORIZONTAL_SPACING;
     float WorldY = GridCoord.Y * TileSize.Y * HEX_VERTICAL_SPACING;
 
+    // Apply staggered row offset for odd columns in the hex grid
     if (!IsItEven(GridCoord.X))
     {
         WorldY += TileSize.Y;
@@ -22,7 +23,6 @@ FVector UGridMathLibrary::HexOffsetToWorld(FGridCoord GridCoord, FVector GridOri
 FVector UGridMathLibrary::HexFindNearestTilePositionOnXYPlane(FVector Position, const FVector TileSize)
 {
     const FGridCoord Coord = HexWorldToOffsetCoord(Position, FVector::ZeroVector, TileSize);
-
     return HexOffsetToWorld(Coord, FVector::ZeroVector, TileSize, Position.Z);
 }
 
@@ -31,12 +31,14 @@ FGridCoord UGridMathLibrary::HexWorldToOffsetCoord(
     const FVector& GridOrigin,
     const FVector& TileSize)
 {
+    // Convert world position to local grid-relative coordinates
     const float LocalX = WorldPos.X - GridOrigin.X;
     const float LocalY = WorldPos.Y - GridOrigin.Y;
 
     const int32 X = FMath::RoundToInt(LocalX / (TileSize.X * HEX_HORIZONTAL_SPACING));
     float YBase = LocalY / (TileSize.Y * HEX_VERTICAL_SPACING);
 
+    // Adjust Y base for odd columns to account for staggered hex layout
     if (!IsItEven(X))
     {
         YBase -= 1.0f;
@@ -76,6 +78,7 @@ int32 UGridMathLibrary::FindNearestTileIndex(
             TileData->TileTags
         );
 
+        // Skip impassable tiles for non-flying units
         if (CostMultiplier >= 999 && !bConsiderFlying)
         {
             continue;
@@ -86,6 +89,7 @@ int32 UGridMathLibrary::FindNearestTileIndex(
             TileData->WorldLocation
         );
 
+        // Apply cost multiplier to distance for cost-weighted selection
         if (!bConsiderFlying)
         {
             Distance *= CostMultiplier;
@@ -164,7 +168,7 @@ bool UGridMathLibrary::GetHexNeighborTiles(const FGridCoord Coord,
     FGridCoord Result;
     int32 i = 0;
     int32 j = 0;
-    //Same collum first
+    // Add same-column neighbors (vertical alignment on the hex grid)
     for (i = 0 ; i <= 1 ; ++i)
     {                 
         Result.X=i*4-2+Coord.X;
@@ -172,6 +176,7 @@ bool UGridMathLibrary::GetHexNeighborTiles(const FGridCoord Coord,
         NeighborsCoords.Add(Result);        
     }
     
+    // Add diagonal neighbors; the Y offset direction depends on whether the column is even
     if (IsItEven(Coord.X))
     {
         for (i = 0 ; i <= 1 ; ++i)

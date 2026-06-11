@@ -14,6 +14,7 @@ UMoveCombatant::UMoveCombatant()
 bool UMoveCombatant::Execute_Implementation(
     const FGridCoord& InSourceCoord, bool bHasHit, const FGridCoord& InTargetCoord)
 {
+    // Validate prerequisites: ready state, grid reference, tile existence
     if (!bReady || !Grid || !Grid->GridRuntimeStateComponent)
     {
         UE_LOG(LogTemp, Warning, TEXT("MoveCombatant::Execute — bReady=%d, Grid=%s, RuntimeState=%s"),
@@ -30,6 +31,7 @@ bool UMoveCombatant::Execute_Implementation(
         return false;
     }
 
+    // No movement needed if source equals target
     if (InSourceCoord == InTargetCoord)
     {
         UE_LOG(LogTemp, Warning, TEXT("MoveCombatant::Execute — Source == Target (%d,%d)"), InSourceCoord.X, InSourceCoord.Y);
@@ -51,6 +53,7 @@ bool UMoveCombatant::Execute_Implementation(
     if (SrcTileData) SourceTileData = *SrcTileData;
     if (TgtTileData) TargetTileData = *TgtTileData;
 
+    // Validate that a combatant exists at the source tile
     ACombatant_Base* Combatant = GetCombatantAtCoord(InSourceCoord);
     if (!Combatant)
     {
@@ -65,6 +68,7 @@ bool UMoveCombatant::Execute_Implementation(
         return false;
     }
 
+    // Validate target tile is not already occupied
     if (Grid->GridRuntimeStateComponent->GetTileOccupancy(InTargetCoord).OccupyingUnit)
     {
         UE_LOG(LogTemp, Warning, TEXT("MoveCombatant::Execute — Target tile (%d,%d) is occupied by %s"),
@@ -73,6 +77,7 @@ bool UMoveCombatant::Execute_Implementation(
         return false;
     }
 
+    // Calculate total movement cost for the path
     MoveTotalCost = 0;
     for (int32 i = 1; i < MovePath.Num(); ++i)
     {
@@ -81,6 +86,7 @@ bool UMoveCombatant::Execute_Implementation(
         MoveTotalCost += Cost;
     }
 
+    // Check if the combatant has enough movement points
     if (!MovementComp->HasEnoughMovementPoints(MoveTotalCost))
     {
         UE_LOG(LogTemp, Warning, TEXT("MoveCombatant::Execute — Not enough MP. Has %d, needs %d"),
@@ -91,6 +97,7 @@ bool UMoveCombatant::Execute_Implementation(
     MovingCombatant = Combatant;
     MovingComp = MovementComp;
 
+    // Convert path coordinates to world-space locations
     MovePathWorld.Empty();
     for (const FGridCoord& Coord : MovePath)
     {
@@ -99,6 +106,7 @@ bool UMoveCombatant::Execute_Implementation(
             MovePathWorld.Add(TileData->WorldLocation);
     }
 
+    // Begin step-by-step movement along the path
     CurrentPathIndex = 0;
     StartPathMovement();
 

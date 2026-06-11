@@ -1,5 +1,4 @@
-// Â© 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel NÃ³bile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permissi
-
+// © 2026 Gabriel Nobile Diniz. All Rights Reserved.
 
 #include "Combatant/Combatant_Base.h"
 #include "AbilitySystemComponent.h"

@@ -1,4 +1,4 @@
-// � 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel N�bile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// Copyright 2025 StandFast Games, LLC
 
 #pragma once
 
@@ -7,119 +7,118 @@
 #include "AIPawn.generated.h"
 
 /**
- * AAIPawn - AI controlled pawn for tactical gameplay
- * Handles spell casting, location management, and impact calculations
+ * AI-controlled pawn for tactical gameplay.
+ * Handles spell casting iteration, location management, and impact calculations
+ * for AI decision-making during combat.
  */
-// ---------------------------------------------------------------------------
-// Actor
-// ---------------------------------------------------------------------------
-
 UCLASS()
 class SFAF_API AAIPawn : public APawn
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this pawn's properties
+	/** Default constructor */
 	AAIPawn();
 
 protected:
+	/** Initializes the AI pawn when the game starts */
 	virtual void BeginPlay() override;
 
 	// -----------------------------------------------------------------------
 	// Internal State
 	// -----------------------------------------------------------------------
 
-	/** Array of locations within range for spell casting */
+	/** Array of grid positions within spell range */
 	TArray<FIntPoint> LocationsInRange;
 
-	/** Number of spells available */
+	/** Total number of spells available */
 	int32 SpellLength = 0;
 
-	/** Counter for spell loop iterations */
+	/** Iteration counter for the outer spell processing loop */
 	int32 SpellLoopCounter = 0;
 
-	/** Current index in spell array */
+	/** Current index in the spell array */
 	int32 SpellArrayIndex = 0;
 
-	/** Counter for locations in range loop iterations */
+	/** Iteration counter for the inner locations loop */
 	int32 LocationsInRangeLoopCounter = 0;
 
-	/** Current index in locations array */
+	/** Current index in the locations array */
 	int32 LocationsInRangeArrayIndex = 0;
 
-	/** Array of potential cast locations */
+	/** Array of valid cast target positions */
 	TArray<FIntPoint> CastLocation;
 
-	/** Counter for cast location loop iterations */
+	/** Iteration counter for the cast location loop */
 	int32 CastLocationLoopCounter = 0;
 
-	/** Current index in cast location array */
+	/** Current index in the cast location array */
 	int32 CastLocationArrayIndex = 0;
 
 	// -----------------------------------------------------------------------
 	// Calculation Weights
 	// -----------------------------------------------------------------------
 
-	/** Weight value for HP in impact calculations */
+	/** Weight multiplier for HP damage/healing in impact calculations */
 	float HPValue = 1000.0f;
 
-	/** Weight value for MP in impact calculations */
+	/** Weight multiplier for MP damage/healing in impact calculations */
 	float MPValue = 200.0f;
 
-	/** Weight value for AP in impact calculations */
+	/** Weight multiplier for AP damage/healing in impact calculations */
 	float APValue = 200.0f;
 
-	/** Weight value for kills in impact calculations */
+	/** Score awarded for killing a unit in impact calculations */
 	float KillValue = 2000.0f;
 
-	/** Weight value for cooldown in impact calculations */
+	/** Penalty weight for remaining cooldown turns */
 	float CooldownValue = 10000.0f;
 
-	/** Weight value for countdown in impact calculations */
+	/** Penalty weight for remaining countdown turns */
 	float CountdownValue = 10000.0f;
 
-	/** Weight value for paying cost in impact calculations */
+	/** Divisor applied to cost values to normalize them against benefits */
 	float CostAdjust = 100.0f;
 
 public:
+	/** Updates the AI pawn every frame */
 	virtual void Tick(float DeltaTime) override;
-
+	/** Sets up player input bindings */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	// -----------------------------------------------------------------------
 	// Spell & Location API
 	// -----------------------------------------------------------------------
 
-	/** Sets the locations in range and number of spells */
+	/** Sets the array of positions in spell range and the number of spells */
 	UFUNCTION(BlueprintCallable, Category = "AI|Spells")
 	void SetLocationsAndSpells(const TArray<FIntPoint>& Points, int32 Spell);
 
-	/** Resets all spell loop counters and indices to zero */
+	/** Resets all spell and location loop counters to zero */
 	UFUNCTION(BlueprintCallable, Category = "AI|Spells")
 	void RestartSpellLoop();
 
-	/** Iterates through locations and spells */
+	/** Advances the spell/location iterator and returns the current (Location.X, Location.Y, SpellIndex) */
 	UFUNCTION(BlueprintCallable, Category = "AI|Spells")
 	FIntVector LocationAndSpellLoop();
 
-	/** Returns current spell loop counters for debugging */
+	/** Returns the current spell and location loop counters for debugging */
 	UFUNCTION(BlueprintPure, Category = "AI|Debug")
 	FIntPoint DebugSpellCounter() const;
 
-	/** Sets the potential cast locations */
+	/** Sets the array of potential cast target positions */
 	UFUNCTION(BlueprintCallable, Category = "AI|Spells")
 	void SetCastLocations(const TArray<FIntPoint>& Points);
 
-	/** Resets all cast location loop counters and indices to zero */
+	/** Resets all cast location loop counters to zero */
 	UFUNCTION(BlueprintCallable, Category = "AI|Spells")
 	void RestartCastLocationLoop();
 
-	/** Iterates through cast locations */
+	/** Advances the cast location iterator and returns the current position */
 	UFUNCTION(BlueprintCallable, Category = "AI|Spells")
 	FIntPoint CastLocationLoop();
 
-	/** Returns current cast location loop counter for debugging */
+	/** Returns the current cast location loop counter for debugging */
 	UFUNCTION(BlueprintPure, Category = "AI|Debug")
 	int32 DebugLocationCounter() const;
 
@@ -127,7 +126,10 @@ public:
 	// Impact API
 	// -----------------------------------------------------------------------
 
-	/** Calculates the impact score of a spell based on various parameters */
+	/**
+	 * Calculates the impact score of a spell based on damage, costs, risks, and ally/enemy status.
+	 * Higher scores indicate more beneficial actions for the AI to prioritize.
+	 */
 	UFUNCTION(BlueprintCallable, Category = "AI|Spells")
 	float CalculateSpellImpact(
 		bool bHurtItself,
@@ -145,11 +147,11 @@ public:
 		int32 ControlledUnitHP
 	);
 
-	/** Calculates the middle value between X and Y of an FIntPoint */
+	/** Calculates the midpoint between X and Y of an FIntPoint */
 	UFUNCTION(BlueprintPure, Category = "AI|Utility")
 	static float CalcMiddle(FIntPoint Value);
 
-	/** Checks if a unit can be killed based on its HP and potential damage */
+	/** Returns true if the given HP can be killed by the given damage range (HP <= Damage.Y) */
 	UFUNCTION(BlueprintPure, Category = "AI|Utility")
 	static bool CanUnitBeKilled(int32 HP, FIntPoint Damage);
 };

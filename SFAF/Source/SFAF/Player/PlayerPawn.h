@@ -1,4 +1,4 @@
-// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// Copyright 2025 StandFast Games, LLC
 
 #pragma once
 
@@ -13,17 +13,16 @@ class SFAF_API APlayerPawn : public APawn
 	GENERATED_BODY()
 
 public:
-	/** Sets default values for this pawn's properties */
+	/** Default constructor */
 	APlayerPawn();
 
 protected:
-	/** Called when the game starts or when spawned */
+	/** Initializes the pawn when the game starts */
 	virtual void BeginPlay() override;
 
 public:
-	/** Called every frame */
+	/** Updates the pawn every frame */
 	virtual void Tick(float DeltaTime) override;
-
-	/** Called to bind functionality to input */
+	/** Sets up player input bindings */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 };

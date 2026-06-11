@@ -1,4 +1,4 @@
-// © 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel Nóbile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// Copyright 2025 StandFast Games, LLC
 
 #pragma once
 
@@ -7,32 +7,37 @@
 #include "Grid/GridCoord.h"
 #include "TacticalControllerComponent.generated.h"
 
-
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+/**
+ * Component that bridges controllers (player or AI) with tactical action components.
+ * Stores source and target grid coordinates keyed by action component name,
+ * and manages team assignment and turn state for the associated controller.
+ */
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SFAF_API UTacticalControllerComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
-	// Sets default values for this component's properties
+	/** Default constructor */
 	UTacticalControllerComponent();
 
 protected:
-	// Called when the game starts
+	/** Initializes the component when the game starts */
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
+	/** Updates the component every frame */
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 	// -----------------------------------------------------------------------
 	// Action related
 	// -----------------------------------------------------------------------	
+	
 	/** Stores a source or target coordinate for a named action component */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	bool AddCoordToComponent(FGridCoord Coord, FName Component, bool bIsTarget) ;
 		
-	/** Retrieves a stored source or target coordinate for a named action component */
+	/** Retrieves the stored source or target coordinate for a named action component */
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	bool GetCoordToComponent(FGridCoord& Coord, FName Component, bool bIsTarget);
 
@@ -43,41 +48,40 @@ public:
 	/** Maps action component names to their target grid coordinates */
 	UPROPERTY()
 	TMap<FName, FGridCoord> InTargetOfEachComponent;
+
 	// -----------------------------------------------------------------------
 	// Team
 	// -----------------------------------------------------------------------	
-	
-	
-	/** Set Team Number.*/
-	UFUNCTION(BlueprintCallable, Category="Team", meta=(ToolTip="Set Team Number"))
+		
+	/** Adds or removes a team number from this controller's team list */
+	UFUNCTION(BlueprintCallable, Category="Team")
 	void SetTeamNumber(int32 NewTeamNumber, bool bAdd);
 	
-	/** Set debug mode.*/
-	UFUNCTION(BlueprintCallable, Category="Team", meta=(ToolTip="Set DebugMode"))
+	/** Enables or disables debug mode for this controller */
+	UFUNCTION(BlueprintCallable, Category="Team")
 	void SetDebugMode(bool bSet);
 	
-	/** Get debug mode.*/
-	UFUNCTION(BlueprintCallable, Category="Team", meta=(ToolTip="Set DebugMode"))
+	/** Returns whether debug mode is active */
+	UFUNCTION(BlueprintCallable, Category="Team")
 	bool GetDebugMode() const;
 	
-	/** Return Team Number.*/
-	UFUNCTION(BlueprintCallable, Category="Team", meta=(ToolTip="Get Team Numbers"))
+	/** Returns the list of team numbers assigned to this controller */
+	UFUNCTION(BlueprintCallable, Category="Team")
 	TArray<int32> GetTeamNumber();
 	
-	/** Return Team Number.*/
-	UFUNCTION(BlueprintCallable, Category="Team", meta=(ToolTip="Get Team Numbers"))
+	/** Returns whether it is currently this controller's turn */
+	UFUNCTION(BlueprintCallable, Category="Team")
 	bool IsMyTurn();
 	
 	/** The team numbers assigned to the owner of this component */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Team")
 	TArray<int32> TeamNumbers;
 	
-	/** Enables debug logging and visualization for this controller */
+	/** Enables debug logging and visualization bypasses for this controller */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Team")
 	bool bDebugMode = false;
 	
-	/** Flag indicating whether it is currently this controller's turn */
+	/** Flag indicating whether it is currently this controller's turn to act */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Team")
 	bool bMyTurn = false;
-	
 };

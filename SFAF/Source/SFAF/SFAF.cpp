@@ -3,4 +3,4 @@
 #include "SFAF.h"
 #include "Modules/ModuleManager.h"
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, SFAF, "SFAF" );
+IMPLEMENT_PRIMARY_GAME_MODULE(FDefaultGameModuleImpl, SFAF, "SFAF");

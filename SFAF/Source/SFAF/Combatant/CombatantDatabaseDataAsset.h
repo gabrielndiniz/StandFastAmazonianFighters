@@ -1,4 +1,4 @@
-// Â© 2026 Gabriel Nobile Diniz. All Rights Reserved.This software and its content, including but not limited to code, art, assets, and documentation, are the exclusive property of Gabriel NÃ³bile Diniz. Unauthorized copying, distribution, adaptation, or other use is prohibited without explicit permission.For inquiries or permission requests, please contact hearnodarkness@gmail.com.
+// Copyright 2025 StandFast Games, LLC
 
 #pragma once
 
@@ -9,17 +9,15 @@
 #include "CombatantDatabaseDataAsset.generated.h"
 
 /**
- * Defines the States of Units
- * TODO: Unit Stats, Unit Spells States (maybe another Data Asset)
+ * Visual representation data for a combatant unit.
+ * Defines the 3D model, animation blueprint, and UI icon.
  */
-
-/** Visual representation data for a combatant unit */
 USTRUCT(BlueprintType)
 struct FCombatantVisualData
 {
 	GENERATED_BODY()
 
-	/** Skeletal mesh used for the 3D model of the unit */
+	/** Skeletal mesh used for the unit's 3D model */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<USkeletalMesh> Mesh;
 
@@ -27,7 +25,7 @@ struct FCombatantVisualData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UAnimInstance> AnimBlueprint;
 
-	/** UI icon representing the unit */
+	/** UI icon representing the unit in menus and HUD */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UTexture2D> Icon;
 };
@@ -43,17 +41,17 @@ struct FAIData
 	FGameplayTag AILastMovementTags;
 };
 
-/** General combatant definition data stored per unit type */
+/** Full definition data for a combatant type, including class, roles, movement, visuals, and AI */
 USTRUCT(BlueprintType)
 struct FCombatantData
 {
 	GENERATED_BODY()
 
-	/** The combatant class to spawn */
+	/** The combatant subclass to spawn for this unit type */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<ACombatant_Base> CombatantClass;
 	
-	/** Tags defining the unit's roles (e.g., Damage, Support) */
+	/** Tags defining the unit's functional roles (e.g., Damage, Support, Tank) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTagContainer UnitRoles;
 
@@ -61,7 +59,7 @@ struct FCombatantData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTag MovementTag;
 
-	/** Visual representation of the unit */
+	/** Visual representation data for this unit type */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FCombatantVisualData VisualData;
 	
@@ -73,21 +71,22 @@ struct FCombatantData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FAIData AIData;
 	
-	/** Whether the AI considers this unit a low-risk target */
+	/** Whether the AI considers this unit a low-risk target (prefers attacking it) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bLowRisk = false;
 };
-/** Primary data asset containing all combatant definitions keyed by gameplay tag */
+
+/**
+ * Primary data asset containing all combatant definitions keyed by gameplay tag.
+ * Maps unit type tags (e.g., Unit.Type.BulletAnt) to their full combatant data.
+ */
 UCLASS()
 class SFAF_API UCombatantDatabaseDataAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 	
 public:
-
-	/*
-	Maps unit type tags (e.g., Unit.Type.BulletAnt) to their full combatant data definitions
-	*/
+	/** Maps unit type tags to their complete combatant definitions */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TMap <FGameplayTag, FCombatantData> CombatantData;
 	
@@ -95,10 +94,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combatant")
 	bool GetCombatantData(FGameplayTag Tag, FCombatantData& OutData) const;
 	
-	/** Returns all registered combatant type tags in the database */
+	/** Returns all registered unit type tags in the database */
 	UFUNCTION(BlueprintCallable, Category = "Combatant")
 	TArray<FGameplayTag> GetAllCombatantTypeTag();
-	
-	
 };
-	
