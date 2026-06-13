@@ -64,12 +64,23 @@ public:
 		TArray<FGridCoord>& PathCoords, 
 		TObjectPtr<UGridRuntimeStateComponent> RuntimeStateComponent);
 
+	/** Retrieves the pathfinding node data for a given grid coordinate from TilesPaths */
+	UFUNCTION(BlueprintCallable, Category = "Pathfinding")
+	bool GetPathNode(const FGridCoord& Coord, FPathNode& OutPathNode) const;
+
+	/** Retrieves the path search node data for a given grid coordinate from the A* cache */
+	UFUNCTION(BlueprintCallable, Category = "Pathfinding")
+	bool GetPathSearchNode(const FGridCoord& Coord, FPathSearchNode& OutNode) const;
+
 	/** Cached map of tile pathfinding data for fast neighbor/cost lookups */
 	UPROPERTY()
 	TMap<FGridCoord, FTilePathfindData> TilePathfindMap;
 	
 	/** Map of path nodes used during reachability and A* calculations */
 	TMap<FGridCoord, FPathNode> TilesPaths;
+
+	/** Cached A* search nodes populated during GetPathCoords for blueprint access */
+	TMap<FGridCoord, FPathSearchNode> PathSearchNodes;
 	
 	/** Cached flying state from the last pathfinding query */
 	bool bLastIsFlying = false;

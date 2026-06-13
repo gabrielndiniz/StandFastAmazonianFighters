@@ -41,6 +41,10 @@ struct FControllers
 	UTacticalControllerComponent* ControllerComponent = nullptr;
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnExecuteActionSignature, bool, bSuccess);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCalculateReachableTilesSignature, bool, bSuccess);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCalculatePathTilesSignature, bool, bSuccess);
+
 /**
  * Central tactical manager that orchestrates grid-based combat actions.
  * Manages team controller assignments, action components (hover, select, target,
@@ -293,4 +297,16 @@ public:
 	/** Called when a MoveCombatant movement sequence completes */
 	UFUNCTION()
 	void OnMoveComplete();
+
+	/** Called when ExecuteAction finishes */
+	UPROPERTY(BlueprintAssignable, Category = "Actions")
+	FOnExecuteActionSignature OnExecuteAction;
+
+	/** Called when CalculateReachableTiles finishes */
+	UPROPERTY(BlueprintAssignable, Category = "Actions")
+	FOnCalculateReachableTilesSignature OnCalculateReachableTiles;
+
+	/** Called when CalculatePathTiles finishes */
+	UPROPERTY(BlueprintAssignable, Category = "Actions")
+	FOnCalculatePathTilesSignature OnCalculatePathTiles;
 };

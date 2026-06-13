@@ -52,10 +52,10 @@ public:
 	int32 TotalCost;
 	
 	/** Returns the computed path tile coordinates */
-	UFUNCTION(BlueprintCallable, Category="Action")
+	UFUNCTION(BlueprintPure, Category="Action")
 	TArray<FGridCoord> GetPathTiles();
 
 	/** Returns the total movement cost of the computed path */
-	UFUNCTION(BlueprintCallable, Category = "Action")
+	UFUNCTION(BlueprintPure, Category = "Action")
 	int32 GetTotalCost() const;
 };

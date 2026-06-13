@@ -499,3 +499,15 @@ bool AGridType::GetPathCoords(FGridCoord Source, FGridCoord Target, TArray<FGrid
 		PathCoords,
 		GridRuntimeStateComponent);
 }
+
+bool AGridType::GetPathNode(const FGridCoord& Coord, FPathNode& OutPathNode) const
+{
+	if (!GridPathFindingComponent) return false;
+	return GridPathFindingComponent->GetPathNode(Coord, OutPathNode);
+}
+
+bool AGridType::GetPathSearchNode(const FGridCoord& Coord, FPathSearchNode& OutNode) const
+{
+	if (!GridPathFindingComponent) return false;
+	return GridPathFindingComponent->GetPathSearchNode(Coord, OutNode);
+}

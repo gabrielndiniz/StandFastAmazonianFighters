@@ -3,6 +3,7 @@
 
 #include "Core/Combat/Tactical/TacticalManager.h"
 
+#include "NetworkReplayStreaming.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Grid/GridType.h"
 #include "Grid/GridMathLibrary.h"
@@ -206,89 +207,103 @@ void ATacticalManager::SetCurrentMovementPoints(int32 Points)
 
 void ATacticalManager::ExecuteAction(UBaseActionComponent* ActionComponent)
 {
+	bool bSuccess = false;
+
 	if (bIsExecutingAbility)
 	{
-		return;
+		// bSuccess stays false
 	}
-
-	if (!ActionComponent)
+	else if (!ActionComponent)
 	{
 		UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No %s found."),  *GetNameSafe(ActionComponent));
-		return;
-	}
-	bool bChange;
-	FGridCoord SourceCoord;
-	FGridCoord TargetCoord;
-	if (bDebug)
-	{
-		if (!DebugController.PlayerController)
-		{
-			UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No DebugController found."))
-			return;
-		}
-		if (!DebugController.ControllerComponent->GetCoordToComponent(SourceCoord, 
-			ActionComponent->GetFName(), false)
-			|| !DebugController.ControllerComponent->GetCoordToComponent(TargetCoord, 
-			ActionComponent->GetFName(), true))
-		{
-			//UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No Coords found."))
-			return;
-		}
-		bChange = ActionComponent->Execute(
-			SourceCoord,
-			true,
-			TargetCoord);
 	}
 	else
 	{
-		if (TeamsControllers.IsEmpty())
+		bool bChange = false;
+		FGridCoord SourceCoord;
+		FGridCoord TargetCoord;
+		bool bHasCoords = false;
+
+		if (bDebug)
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: TeamsControllers is empty."))
-			return;
+			if (!DebugController.PlayerController)
+			{
+				UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No DebugController found."))
+			}
+			else if (!DebugController.ControllerComponent->GetCoordToComponent(SourceCoord, 
+				ActionComponent->GetFName(), false)
+				|| !DebugController.ControllerComponent->GetCoordToComponent(TargetCoord, 
+				ActionComponent->GetFName(), true))
+			{
+				//UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No Coords found."))
+			}
+			else
+			{
+				bChange = ActionComponent->Execute(
+					SourceCoord,
+					true,
+					TargetCoord);
+				bHasCoords = true;
+			}
 		}
-		if (!TeamsControllers[CurrentTeam].PlayerController && !TeamsControllers[CurrentTeam].AIController)
+		else
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No TeamController found."))
-			return;
+			if (TeamsControllers.IsEmpty())
+			{
+				UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: TeamsControllers is empty."))
+			}
+			else if (!TeamsControllers[CurrentTeam].PlayerController && !TeamsControllers[CurrentTeam].AIController)
+			{
+				UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No TeamController found."))
+			}
+			else if (!TeamsControllers[CurrentTeam].ControllerComponent->GetCoordToComponent(SourceCoord, 
+				ActionComponent->GetFName(), false)
+				|| !TeamsControllers[CurrentTeam].ControllerComponent->GetCoordToComponent(TargetCoord, 
+				ActionComponent->GetFName(), true))
+			{
+				UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No Coords found considering %s."), 
+					*GetNameSafe(ActionComponent))
+			}
+			else
+			{
+				bChange = ActionComponent->Execute(
+					SourceCoord,
+					true,
+					TargetCoord);
+				bHasCoords = true;
+			}
 		}
-		if (!TeamsControllers[CurrentTeam].ControllerComponent->GetCoordToComponent(SourceCoord, 
-			ActionComponent->GetFName(), false)
-			|| !TeamsControllers[CurrentTeam].ControllerComponent->GetCoordToComponent(TargetCoord, 
-			ActionComponent->GetFName(), true))
+
+		if (bHasCoords)
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Tactical Manager: No Coords found considering %s."), 
-				*GetNameSafe(ActionComponent))
-			return;
-		}
-		bChange = ActionComponent->Execute(
-			SourceCoord,
-			true,
-			TargetCoord);
-	}
-	FGridTileStaticData SourceData = ActionComponent->GetTileData(false);
-	FGridTileStaticData TargetData = ActionComponent->GetTileData(true);
-	if (bChange)
-	{
-		UInstancedStaticMeshComponent** MeshPtr  = ComponentMesh.Find(ActionComponent);
-		if (MeshPtr)
-		{
-			if (UInstancedStaticMeshComponent* Mesh = *MeshPtr)
-			{			
-				Mesh->ClearInstances();
-				for (const FVector& Location : ActionComponent->GetLocationsForMeshes())
+			bSuccess = true;
+			FGridTileStaticData SourceData = ActionComponent->GetTileData(false);
+			FGridTileStaticData TargetData = ActionComponent->GetTileData(true);
+			if (bChange)
+			{
+				UInstancedStaticMeshComponent** MeshPtr  = ComponentMesh.Find(ActionComponent);
+				if (MeshPtr)
 				{
-					FTransform Transform = FTransform::Identity;
-					Transform.SetLocation(Location + FVector(0,0,ZOffset));
-					Mesh->AddInstance(Transform,true);
-				}					
+					if (UInstancedStaticMeshComponent* Mesh = *MeshPtr)
+					{			
+						Mesh->ClearInstances();
+						for (const FVector& Location : ActionComponent->GetLocationsForMeshes())
+						{
+							FTransform Transform = FTransform::Identity;
+							Transform.SetLocation(Location + FVector(0,0,ZOffset));
+							Mesh->AddInstance(Transform,true);
+						}					
+					}
+				}
+			}
+			if (SequencedActions.Contains(ActionComponent))
+			{
+				ExecuteAction(*SequencedActions.Find(ActionComponent));
 			}
 		}
 	}
-	if (SequencedActions.Contains(ActionComponent))
-	{
-		ExecuteAction(*SequencedActions.Find(ActionComponent));
-	}
-	
+
+	OnExecuteAction.Broadcast(bSuccess);
 }
 
 void ATacticalManager::SetConsiderFlying(bool bConsider)
@@ -319,12 +334,14 @@ bool ATacticalManager::CalculateReachableTiles(
 	if (!Grid || !Grid->GridRuntimeStateComponent)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculateReachableTiles - Missing Grid or GridRuntimeStateComponent."));
+		OnCalculateReachableTiles.Broadcast(false);
 		return false;
 	}
 
 	if (!SelectTile)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculateReachableTiles - Missing SelectTile."));
+		OnCalculateReachableTiles.Broadcast(false);
 		return false;
 	}
 
@@ -355,7 +372,9 @@ bool ATacticalManager::CalculateReachableTiles(
 		}
 	}
 
-	return !OutReachableTiles.IsEmpty();
+	bool bSuccess = !OutReachableTiles.IsEmpty();
+	OnCalculateReachableTiles.Broadcast(bSuccess);
+	return bSuccess;
 }
 
 bool ATacticalManager::CalculatePathTiles(TArray<FGridCoord>& OutPathTiles, TArray<FVector>& OutLocations)
@@ -366,30 +385,35 @@ bool ATacticalManager::CalculatePathTiles(TArray<FGridCoord>& OutPathTiles, TArr
 	if (!Grid || !Grid->GridRuntimeStateComponent)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculatePathTiles - Missing Grid or GridRuntimeStateComponent."));
+		OnCalculatePathTiles.Broadcast(false);
 		return false;
 	}
 
 	if (!SelectTile)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculatePathTiles - Missing SelectTile."));
+		OnCalculatePathTiles.Broadcast(false);
 		return false;
 	}
 
 	if (!HoverTile)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculatePathTiles - Missing HoverTile."));
+		OnCalculatePathTiles.Broadcast(false);
 		return false;
 	}
 
 	if (!TargetTile)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculatePathTiles - Missing TargetTile."));
+		OnCalculatePathTiles.Broadcast(false);
 		return false;
 	}
 
 	if (!ReachableTiles)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TacticalManager::CalculatePathTiles - Missing ReachableTiles."));
+		OnCalculatePathTiles.Broadcast(false);
 		return false;
 	}
 	
@@ -417,8 +441,9 @@ bool ATacticalManager::CalculatePathTiles(TArray<FGridCoord>& OutPathTiles, TArr
 		}
 	}
 	
-	
-	return !OutPathTiles.IsEmpty();
+	bool bSuccess = !OutPathTiles.IsEmpty();
+	OnCalculatePathTiles.Broadcast(bSuccess);
+	return bSuccess;
 }
 
 void ATacticalManager::SetScanPath(bool bNewScanPath)
@@ -447,8 +472,13 @@ bool ATacticalManager::ApplyAddRemoveUnit()
 {
 	if (!SelectTile) { return false; }
 	
-	return AddRemoveUnit->Execute(SelectTile->GetCoord(false), true, SelectTile->GetCoord(false));
+	FGridCoord Coord = SelectTile->GetCoord(false);
 	
+	bool bSuccess = AddRemoveUnit->Execute(Coord, true,Coord);
+	
+	ExecuteAction(SelectTile);
+	
+	return bSuccess;
 }
 
 bool ATacticalManager::AbilityMoveUnit()

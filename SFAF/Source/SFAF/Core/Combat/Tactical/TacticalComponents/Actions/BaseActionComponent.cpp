@@ -81,6 +81,8 @@ bool UBaseActionComponent::Execute_Implementation(
 		return true;
 	}
 	
+	SourceTileData = *SourceTile;
+	TargetTileData = *TargetTile;
 	SetLocationsForMeshes();
 	return false;
 }

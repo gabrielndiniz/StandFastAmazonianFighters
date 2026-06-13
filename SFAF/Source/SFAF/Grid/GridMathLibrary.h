@@ -25,21 +25,29 @@ struct FTilePathfindData
 };
 
 /** Internal node used by the A* pathfinding algorithm for priority queue processing */
+USTRUCT(BlueprintType)
 struct FPathNode
 {
+    GENERATED_BODY()
+
     /** Grid coordinate this node represents */
+    UPROPERTY(BlueprintReadOnly, Category = "Pathfinding")
     FGridCoord Coord;
 
     /** Accumulated movement cost from the start node to this node */
+    UPROPERTY(BlueprintReadOnly, Category = "Pathfinding")
     int CostSoFar = 0;
 
     /** Estimated remaining cost to the goal (admissible heuristic) */
+    UPROPERTY(BlueprintReadOnly, Category = "Pathfinding")
     int Heuristic = 0;
 
     /** Sum of CostSoFar + Heuristic (used as priority in the queue) */
+    UPROPERTY(BlueprintReadOnly, Category = "Pathfinding")
     int TotalCost = 0;
 
     /** Whether this node has already been fully evaluated (closed set) */
+    UPROPERTY(BlueprintReadOnly, Category = "Pathfinding")
     bool IsClosed = false;
 
     /** Pointer to the predecessor node, used to reconstruct the final path */
@@ -48,6 +56,37 @@ struct FPathNode
     /** Comparison operator: lower TotalCost means higher priority in the queue */
     bool operator<(const FPathNode& Other) const {
         return TotalCost < Other.TotalCost;
+    }
+};
+
+/** Internal node used by the A* pathfinding algorithm for priority queue processing with tie-breaking */
+USTRUCT(BlueprintType)
+struct FPathSearchNode
+{
+    GENERATED_BODY()
+
+    /** Sum of CostSoFar + Heuristic (used as priority in the queue) */
+    UPROPERTY(BlueprintReadOnly, Category = "Pathfinding")
+    int32 TotalCost = 0;
+
+    /** Number of steps from the source to this node */
+    UPROPERTY(BlueprintReadOnly, Category = "Pathfinding")
+    int32 HopCount = 0;
+
+    /** Linearity penalty for straighter paths (lower = more linear) */
+    UPROPERTY(BlueprintReadOnly, Category = "Pathfinding")
+    int32 LinearityPenalty = 0;
+
+    /** Grid coordinate this node represents */
+    UPROPERTY(BlueprintReadOnly, Category = "Pathfinding")
+    FGridCoord Coord;
+
+    /** Prefer lower total cost, then fewer hops, then more linear paths */
+    bool operator<(const FPathSearchNode& Other) const
+    {
+        if (TotalCost != Other.TotalCost) return TotalCost < Other.TotalCost;
+        if (HopCount != Other.HopCount) return HopCount < Other.HopCount;
+        return LinearityPenalty < Other.LinearityPenalty;
     }
 };
 

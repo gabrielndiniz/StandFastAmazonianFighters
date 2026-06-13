@@ -194,7 +194,7 @@ public:
 	FGridTileStaticData* GetTileStaticData(FGridCoord Coord);
 	
 	/** Returns the movement cost to enter the tile at the given coordinate */
-	UFUNCTION(BlueprintCallable, Category = "Grid")
+	UFUNCTION(BlueprintPure, Category = "Grid")
 	int32 GetTileCost(FGridCoord Coord);
 		
 	/** Populates the array with neighbor coordinates for the given tile */
@@ -208,6 +208,14 @@ public:
 	/** Computes the path from Source to Target and populates PathCoords */
 	bool GetPathCoords(FGridCoord Source, FGridCoord Target,
 	                   TArray<FGridCoord>& PathCoords);
+
+	/** Retrieves the pathfinding node data for a given grid coordinate from the pathfinding component */
+	UFUNCTION(BlueprintPure, Category = "Grid|Pathfinding")
+	bool GetPathNode(const FGridCoord& Coord, FPathNode& OutPathNode) const;
+
+	/** Retrieves the A* search node data for a given grid coordinate from the pathfinding component */
+	UFUNCTION(BlueprintPure, Category = "Grid|Pathfinding")
+	bool GetPathSearchNode(const FGridCoord& Coord, FPathSearchNode& OutNode) const;
 
 protected:
 	// -----------------------------------------------------------------------

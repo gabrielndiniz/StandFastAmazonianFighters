@@ -199,23 +199,7 @@ bool UGridPathfindingComponent::GetPathCoords(const FGridCoord Source, const FGr
         return false;
     }
 
-   
-    // A* pathfinding node with tie-breaking by hop count and linearity
-    struct FPathSearchNode
-    {
-        int32 TotalCost;
-        int32 HopCount;
-        int32 LinearityPenalty;
-        FGridCoord Coord;
-
-        // Prefer lower total cost, then fewer hops, then more linear paths
-        bool operator<(const FPathSearchNode& Other) const
-        {
-            if (TotalCost != Other.TotalCost) return TotalCost < Other.TotalCost;
-            if (HopCount != Other.HopCount) return HopCount < Other.HopCount;
-            return LinearityPenalty < Other.LinearityPenalty;
-        }
-    };
+    PathSearchNodes.Empty();
 
     // A* state: cost-so-far (GScore), hop count, and predecessor tracking
     TMap<FGridCoord, int32> GScore;
@@ -308,13 +292,14 @@ bool UGridPathfindingComponent::GetPathCoords(const FGridCoord Source, const FGr
                 const int32 Heuristic = UGridMathLibrary::GetHexDistance(Neighbor, Target);
                 const int32 Linearity = UGridMathLibrary::GetLinearityPenalty(Source, Target, Neighbor);
 
-                
-                Push({
-                    NewG + Heuristic,
-                    Hops[Neighbor],
-                    Linearity,
-                    Neighbor
-                });
+                FPathSearchNode SearchNode;
+                SearchNode.TotalCost = NewG + Heuristic;
+                SearchNode.HopCount = Hops[Neighbor];
+                SearchNode.LinearityPenalty = Linearity;
+                SearchNode.Coord = Neighbor;
+                PathSearchNodes.Add(Neighbor, SearchNode);
+
+                Push(SearchNode);
             }
             else
             {
@@ -329,4 +314,23 @@ bool UGridPathfindingComponent::GetPathCoords(const FGridCoord Source, const FGr
     return false;
 }
 
+bool UGridPathfindingComponent::GetPathNode(const FGridCoord& Coord, FPathNode& OutPathNode) const
+{
+    if (const FPathNode* Node = TilesPaths.Find(Coord))
+    {
+        OutPathNode = *Node;
+        return true;
+    }
+    return false;
+}
+
+bool UGridPathfindingComponent::GetPathSearchNode(const FGridCoord& Coord, FPathSearchNode& OutNode) const
+{
+    if (const FPathSearchNode* Node = PathSearchNodes.Find(Coord))
+    {
+        OutNode = *Node;
+        return true;
+    }
+    return false;
+}
 
