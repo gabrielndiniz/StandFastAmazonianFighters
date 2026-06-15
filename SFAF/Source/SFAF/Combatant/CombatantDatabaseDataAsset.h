@@ -74,6 +74,10 @@ struct FCombatantData
 	/** Whether the AI considers this unit a low-risk target (prefers attacking it) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bLowRisk = false;
+	
+	/** Tags defining the unit's spells - maps to SpellDatabaseDataAsset */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combatant|Spells")
+	FGameplayTagContainer UnitSpells;
 };
 
 /**

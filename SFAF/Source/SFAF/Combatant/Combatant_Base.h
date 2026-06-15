@@ -7,6 +7,8 @@
 #include "AbilitySystemInterface.h"
 #include "GameplayTagContainer.h"
 #include "CombatantComponents/TeamComponent.h"
+#include "CombatantComponents/HealthPointsComponent.h"
+#include "CombatantComponents/ActionPointsComponent.h"
 #include "Combatant_Base.generated.h"
 
 class UAbilitySystemComponent;
@@ -56,6 +58,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Combatant|Team")
 	void SetTeam(int32 NewTeam);
 
+	/** Gets the Health component */
+	UFUNCTION(BlueprintCallable, Category = "Combatant|Components")
+	UHealthPointsComponent* GetHealthComponent() const { return HealthComponent; }
+
+	/** Gets the Action Points component */
+	UFUNCTION(BlueprintCallable, Category = "Combatant|Components")
+	UActionPointsComponent* GetActionPointsComponent() const { return ActionPointsComponent; }
+
 	/** Event broadcast whenever this unit's team changes */
 	UPROPERTY(BlueprintAssignable, Category="Combatant|Team")
 	FOnTeamChanged OnTeamChanged;
@@ -79,6 +89,14 @@ protected:
 	/** Component for team affiliation management */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combatant|Team")
 	TObjectPtr<UTeamComponent> TeamComponent;
+
+	/** Component managing health */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combatant|Health")
+	TObjectPtr<UHealthPointsComponent> HealthComponent;
+
+	/** Component managing action points */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combatant|Action")
+	TObjectPtr<UActionPointsComponent> ActionPointsComponent;
 	
 	// -----------------------------------------------------------------------
 	// Data

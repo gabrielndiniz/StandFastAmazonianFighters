@@ -15,6 +15,9 @@ ACombatant_Base::ACombatant_Base()
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 	
 	TeamComponent = CreateDefaultSubobject<UTeamComponent>(TEXT("TeamComponent"));
+
+	HealthComponent = CreateDefaultSubobject<UHealthPointsComponent>(TEXT("HealthComponent"));
+	ActionPointsComponent = CreateDefaultSubobject<UActionPointsComponent>(TEXT("ActionPointsComponent"));
 }
 
 UAbilitySystemComponent* ACombatant_Base::GetAbilitySystemComponent() const
